@@ -111,7 +111,7 @@ function pret() {
     $('consigne').innerHTML = `<b>${esc(c.nom)}</b> · colorie le plus de cases possible en 30 s. ${esc(c.idee)}<div class="etoiles">${o.map((n, i) => `<span class="${meil > i ? 'ok' : ''}">${'★'.repeat(i + 1)} ${n} cases</span>`).join('')}</div>`;
     dire('Écris ton code, puis lance. Tu peux le changer pendant les 30 s : il repart de la ligne 1.');
   } else if (S.mode === 'zero') {
-    const z = ZERO[S.zLv];
+    const z = ZERO[S.zLv]; S.advNom = 'Zéro'; S.advId = null;
     $('consigne').innerHTML = `<b>${esc(c.nom)}</b> · contre Zéro, niveau ${S.zLv + 1} (${esc(z.nom)}). Le robot qui a le plus de cases au bout de 30 s gagne. <b>1 minute</b> pour écrire, puis le duel.`;
     adversaire(z.code, 'Zéro', 0, 'son code, à lire avant le duel'); dire('Lis le code de Zéro, écris le tien, puis lance : tu as 1 minute.');
   }
