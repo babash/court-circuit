@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Court-circuit · salle de classe</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23070B16'/%3E%3Cpath d='M18 3 8 18h7l-2 11 11-16h-7z' fill='%23FF5CA8'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/polices.css">
+<link rel="stylesheet" href="css/jeu.css">
+<style>
+.prof{max-width:1400px;margin:0 auto;padding:12px 16px;display:flex;flex-direction:column;gap:12px}
+.haut{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center;background:var(--panel);border:1px solid var(--trait);border-radius:14px;padding:12px 16px}
+#qr{background:#fff;padding:8px;border-radius:8px;width:150px;height:150px}
+#qr svg{width:100%;height:100%}
+.lien{font-family:var(--code);font-size:14px;word-break:break-all}
+.matchs{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px}
+.match{background:var(--panel);border:1px solid var(--trait);border-radius:12px;padding:8px;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:13.5px}
+.match .vs{display:flex;justify-content:space-between;width:100%;gap:6px}
+.match .vs b{color:var(--k)}.match .vs i{color:var(--z);font-style:normal;font-weight:700;text-align:right}
+table{border-collapse:collapse;width:100%;font-size:15px}th,td{padding:6px 8px;border-bottom:1px solid var(--trait);text-align:left}th{font-family:var(--titre);color:var(--gris)}
+.bravo{color:var(--vert)}
+@media (max-width:700px){.haut{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header class="entete"><h1><span>Court</span>-<b>circuit</b></h1><div class="mode">Salle de classe · page de l’enseignant·e, à projeter</div><a class="bouton petit" href="index.html" style="display:inline-flex;align-items:center;text-decoration:none">Page des élèves</a></header>
+<main class="prof">
+  <section class="haut">
+    <div id="qr" aria-label="QR code du lien de la salle"></div>
+    <div>
+      <div>Code de la salle</div><div class="salle-code" id="code">····</div>
+      <div class="lien" id="lien"></div>
+      <div class="ligne"><button class="bouton petit" id="copier" type="button">Copier le lien</button><button class="bouton petit" id="nouvelle" type="button">Nouvelle salle</button><span id="etat" class="vitesse"></span></div>
+    </div>
+  </section>
+  <section class="consigne">
+    <div class="ligne" style="margin:0">
+      <label>Carte <select id="carte"></select></label>
+      <label>Écriture <select id="ecriture"><option value="30">30 s</option><option value="60" selected>1 min</option><option value="90">1 min 30</option><option value="120">2 min</option></select></label>
+      <button class="bouton fort" id="lancer" type="button">Lancer la manche</button>
+      <span id="infoManche" class="vitesse"></span>
+    </div>
+    <div><b id="nbJoueurs">0 élève</b> dans la salle · les paires changent à chaque manche ; un nombre impair joue contre Zéro.</div>
+    <div class="liste-joueurs" id="joueurs"></div>
+  </section>
+  <section><h2 style="font-family:var(--titre);margin:0 0 8px;font-size:20px" id="titreMatchs">Les duels</h2><div class="matchs" id="matchs"></div></section>
+  <section id="bilan" hidden><h2 style="font-family:var(--titre);margin:0 0 8px;font-size:20px">Bilan de la manche</h2><div id="bilanTexte"></div></section>
+</main>
+<script src="config.js"></script>
+<script src="vendor/temps-reel.js"></script>
+<script src="vendor/qrcode.js"></script>
+<script src="js/interp.js"></script>
+<script src="js/regles.js"></script>
+<script src="js/cartes.js"></script>
+<script src="js/partie.js"></script>
+<script src="js/dessin.js"></script>
+<script src="js/reseau.js"></script>
+<script src="js/prof.js"></script>
+</body>
+</html>

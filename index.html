@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Court-circuit · duel de robots en Python</title>
+<meta name="description" content="Jeu en ligne : écrire en Python le code d'un robot qui colorie le sol, seul·e, contre l'ordinateur ou en duel en direct. Boucles, conditions, opérateurs.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23070B16'/%3E%3Cpath d='M18 3 8 18h7l-2 11 11-16h-7z' fill='%2322D3EE'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/polices.css">
+<link rel="stylesheet" href="css/jeu.css">
+</head>
+<body>
+<header class="entete">
+  <h1><span>Court</span>-<b>circuit</b></h1>
+  <div class="mode" id="mode"></div>
+  <button class="bouton petit" id="bMemo" type="button">Mémo</button>
+  <button class="bouton petit" id="bAccueil" type="button">Accueil</button>
+</header>
+<main class="jeu" id="jeu" hidden>
+  <section class="col" aria-label="Le plateau">
+    <div class="bandeau"><span class="phase" id="phase">Prêt·e</span><span class="k" id="sMoi">0</span><div class="barre" aria-hidden="true"><i class="bk" id="bMoi"></i><i class="bz" id="bLui"></i></div><span class="z" id="sLui">0</span><b class="chrono" id="chrono" aria-label="Temps restant"></b></div>
+    <div id="scene"><canvas id="plateau" aria-label="Le plateau : ton robot est en bas, en cyan"></canvas></div>
+    <div class="noms"><b>Toi : en bas, en cyan</b><i id="nomAdv">Adversaire : en rose</i></div>
+    <div id="salleInfo" class="consigne" hidden></div>
+    <div class="adv" id="adv" hidden><h3><span id="advNom">Zéro</span><span id="advNote"></span></h3><div class="lecture" id="advCode" aria-label="Le code de l’adversaire"></div></div>
+  </section>
+  <section class="col" aria-label="Ton code">
+    <div class="consigne" id="consigne"></div>
+    <div class="ligne" style="margin:0" id="choix"><span id="choixCarte"><label class="sr" for="carte">Carte</label><select id="carte"></select></span><span id="choixNiveau" hidden><label class="sr" for="niveau">Niveau de Zéro</label><select id="niveau"></select></span></div>
+    <div class="ed" id="editeur"></div>
+    <div class="erreur" id="erreur" hidden role="alert"><code id="errTexte"></code><div class="ligne" style="margin:6px 0 0"><button class="bouton petit" id="errBouton" type="button">Expliquer en français</button></div><div class="fr" id="errFr" hidden><div id="errFrTexte"></div></div></div>
+    <div class="outils"><div class="onglets" id="onglets" role="tablist" aria-label="Boîte à outils"></div><div class="mots" id="mots"></div></div>
+    <div class="vitesse" id="vitesse"></div>
+    <div class="actions"><button class="bouton fort" id="go" type="button">Lancer</button><button class="bouton" id="pret" type="button" hidden>Je suis prêt·e</button></div>
+    <div class="message" id="message" role="status" aria-live="polite"></div>
+  </section>
+</main>
+<div class="voile" id="voile" hidden><div class="fenetre" id="fenetre" role="dialog" aria-modal="true"></div></div>
+<script src="config.js"></script>
+<script src="vendor/editeur.js"></script>
+<script src="vendor/temps-reel.js"></script>
+<script src="js/interp.js"></script>
+<script src="js/regles.js"></script>
+<script src="js/cartes.js"></script>
+<script src="js/partie.js"></script>
+<script src="js/dessin.js"></script>
+<script src="js/aide.js"></script>
+<script src="js/editeur.js"></script>
+<script src="js/reseau.js"></script>
+<script src="js/jeu.js"></script>
+</body>
+</html>
