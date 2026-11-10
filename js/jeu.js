@@ -236,7 +236,7 @@ function majSalle() {
   if (S.mode !== 'salle') return;
   const n = S.joueurs.length;
   $('salleInfo').hidden = false;
-  $('salleInfo').innerHTML = `Salle <b class="salle-code" style="font-size:20px;letter-spacing:2px">${esc(S.codeSalle)}</b> · ${n} joueur${n > 1 ? 's' : ''}${S.salle && S.salle.demo ? ' · mode démo (cet ordinateur seulement)' : ''}${S.etatReseau && S.etatReseau !== 'connecte' ? ' · connexion…' : ''}`
+  $('salleInfo').innerHTML = `Salle <b class="salle-code" style="font-size:20px;letter-spacing:2px">${esc(S.codeSalle)}</b> · ${n} élève${n > 1 ? 's' : ''}${S.salle && S.salle.demo ? ' · mode démo (cet ordinateur seulement)' : ''}${S.etatReseau && S.etatReseau !== 'connecte' ? ' · connexion…' : ''}`
     + (S.hote && S.etat !== 'duel' && S.etat !== 'ecriture' && S.etat !== 'attente' ? ` <span class="ligne" style="display:inline-flex;margin:4px 0"><select id="hCarte" aria-label="Carte de la manche">${CARTES.map((c, i) => `<option value="${i}"${i === (S.hCarte || 0) ? ' selected' : ''}>${esc(c.nom)}</option>`).join('')}</select><button class="bouton fort petit" id="hLancer"${n < 2 ? ' disabled' : ''}>Lancer une manche</button></span>${n < 2 ? '<br>Donne le code ou ce lien à ton ou ta camarade : <a href="' + esc(lienSalle(S.codeSalle)) + '">' + esc(lienSalle(S.codeSalle)) + '</a>' : ''}` : '');
   const b = $('hLancer'); if (b) b.onclick = () => { S.hCarte = +$('hCarte').value; lancerManche(S.hCarte, 60); };
 }
@@ -318,7 +318,7 @@ function accueil() {
       <button class="carte-choix" data-a="defi"><b>Défier un·e camarade</b><span>Crée une salle à deux et donne son code.</span></button>
     </div>
     <p id="accErr" class="message mal"></p>
-    <p class="sous" style="margin:8px 0 0"><a href="memo.html">Mémo à imprimer</a> · Rien n’est enregistré en ligne : ton pseudo et ton code ne passent qu’aux joueurs de ta salle.</p>`, a => {
+    <p class="sous" style="margin:8px 0 0"><a href="memo.html">Mémo à imprimer</a> · Rien n’est enregistré en ligne : ton pseudo et ton code ne passent qu’aux élèves de ta salle.</p>`, a => {
     const ps = $('pseudo').value.trim();
     if (ps.length < 2) { $('accErr').textContent = 'Écris un prénom ou un pseudo (2 lettres au moins).'; $('pseudo').focus(); return; }
     S.pseudo = ps; stock.ecrire('pseudo', ps);
@@ -334,6 +334,7 @@ function memo() {
     <h3>Les actions</h3>${dl(MOTS.actions)}<h3>Les capteurs</h3>${dl(MOTS.capteurs)}<h3>Les mots de Python</h3>${dl(MOTS.mots_cles)}
     <h3>Exemples</h3><pre>${colorer('for i in range(4):\n    avancer()\ndroite()')}</pre><pre>${colorer('while True:\n    if libre():\n        avancer()\n    else:\n        droite()')}</pre>
     <h3>Les règles</h3><p>30 s de match. Le robot qui a le plus de cases gagne. Une case de l’adversaire sur laquelle tu passes devient la tienne. Chaque ligne recopiée ralentit ton robot : une boucle évite de recopier.</p>
+    <h3>Au clavier</h3><p>Tab décale la ligne vers la droite, Maj + Tab vers la gauche. Échap puis Tab sort de l’éditeur. Ctrl + Entrée lance ou envoie le code.</p>
     <div class="ligne"><a class="bouton" href="memo.html" target="_blank" rel="noopener">Mémo à imprimer</a><button class="bouton fort" data-a="ok">Fermer</button></div></div>`, () => fermer());
 }
 

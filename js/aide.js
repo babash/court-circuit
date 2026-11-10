@@ -13,7 +13,7 @@ const MOTS = {
     { mot: 'couleur()', role: 'La couleur de la case devant : "vide", "moi", "adversaire" ou "mur".' },
     { mot: 'couleur("droite")', role: 'La couleur de la case à droite. Aussi : "gauche".' },
     { mot: 'cible()', role: 'Vrai si un éclair toucherait l’adversaire maintenant.' },
-    { mot: 'distance()', role: 'Le nombre de cases jusqu’à l’adversaire (en ligne droite et en colonnes).' },
+    { mot: 'distance()', role: 'Le nombre de cases jusqu’à l’adversaire (en lignes et en colonnes).' },
   ],
   mots_cles: [
     { mot: 'for i in range(3):', role: 'Répète 3 fois les lignes décalées en dessous (boucle bornée).' },
@@ -38,7 +38,7 @@ const EXPLICATIONS = [
   [/^SyntaxError: Missing parentheses in call to '(\w+)'/, 'Il manque les parenthèses : une action ou un capteur s’écrit toujours avec ().', 'Écris par exemple avancer() et non avancer.'],
   [/^SyntaxError: invalid syntax\. Maybe you meant '=='/, 'Dans une condition, on compare avec == (deux signes égal). Un seul = sert à donner une valeur à une variable.', 'Écris par exemple : if distance() == 2:'],
   [/^SyntaxError: '\(' was never closed/, 'Une parenthèse ouverte n’est jamais fermée.', 'Compte les ( et les ) de la ligne : il en faut autant.'],
-  [/^SyntaxError: invalid character '(.)'/, 'Ce caractère n’existe pas en Python.', 'Retire-le. En Python, une ligne ne finit pas par un point-virgule.'],
+  [/^SyntaxError: invalid character '(.)'/, 'Ce caractère n’existe pas en Python.', 'Retire-le. En Python, on ne met pas de point-virgule en fin de ligne.'],
   [/^SyntaxError: unterminated string literal/, 'Un texte entre guillemets n’est pas fermé.', 'Ferme le texte avec le même guillemet : "droite".'],
   [/^SyntaxError: invalid syntax\. Perhaps you forgot a comma/, 'Il manque une virgule entre deux valeurs dans les parenthèses.', 'Écris par exemple range(2, 5).'],
   [/^SyntaxError: invalid syntax/, 'Python ne comprend pas cette ligne.', 'Vérifie : une seule instruction par ligne, un else juste sous son if, les mots bien écrits.'],

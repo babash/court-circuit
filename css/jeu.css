@@ -40,8 +40,9 @@ input[type=text],select{min-height:44px;border-radius:10px;border:1px solid var(
 .lecture .l.on{background:rgba(250,204,21,.18)}
 .lecture .l.prend{cursor:pointer}.lecture .l.prend:hover{background:rgba(34,211,238,.14)}
 .lecture .t{white-space:pre}
-.lecture .n{width:30px;flex:none;text-align:right;padding-right:8px;color:#64708A}
-.c-kw{color:var(--violet);font-weight:700}.c-str{color:#FDBA74}.c-num{color:#FDE047}.c-fn{color:#67E8F9}.c-op{color:#FF8AC4}.c-com{color:#8A97B0;font-style:italic}
+.lecture .n{width:30px;flex:none;text-align:right;padding-right:8px;color:#8A97B0}
+.lecture .l.on .n{color:#C9D2E3}
+.c-kw{color:var(--violet);font-weight:700}.c-str{color:#FDBA74}.c-num{color:#FDE047}.c-fn{color:#67E8F9}.c-op{color:#FF8AC4}.c-com{color:#A9B5C8;font-style:italic}
 .consigne{background:var(--panel);border:1px solid var(--trait);border-radius:10px;padding:8px 12px;font-size:14.5px}
 .consigne b{color:var(--jaune)}
 .etoiles{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:4px;font-size:14px}

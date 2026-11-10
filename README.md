@@ -34,7 +34,7 @@ while True:                                    # répéter sans fin (boucle non 
         gauche()
 ```
 
-Le code de départ est `for i in range(8): avancer()` : il marche tout de suite, mais le robot s'arrête quand le code est fini. **Chaque ligne recopiée ralentit le robot** : une boucle `for` de 3 tours bat 3 lignes recopiées.
+Le code de départ est `for i in range(8): avancer()` : il marche tout de suite, mais le robot s'arrête quand le code est fini. **Chaque ligne recopiée ralentit le robot** : avec une boucle `for` de 3 tours, il va plus vite qu'avec 3 lignes recopiées.
 
 ## Pour quels usages
 
@@ -49,14 +49,14 @@ Le code de départ est `for i in range(8): avancer()` : il marche tout de suite,
 ## Pourquoi ça marche
 
 - **Tout le monde marque des points** : un robot colorie toujours quelques cases, même avec un code très simple.
-- **Les meilleurs codes gagnent** : en simulation, sur 5 cartes sur 6, plus le code est élaboré, plus il gagne (sur Le damier, l'éclair n'apporte encore rien) ; voler une case adverse compte double.
+- **Les meilleurs codes gagnent** : en simulation, sur 5 cartes sur 6, plus le code est élaboré, plus il gagne (sur Le damier, l'éclair fait encore perdre) ; voler une case adverse compte double.
 - **L'éditeur des programmeur·se·s** (règle 20) : coloration, indentation automatique et touche Tab, guides des blocs, autocomplétion qui comprend aussi le français (« si », « tant que », « sinon »), erreurs affichées comme en Python puis expliquées en français.
 - **Apprendre des autres** : le code de l'adversaire est visible pendant le duel, et on peut en emprunter une ligne à la fin.
 - **Des retours de processus** : des conseils pendant le match (« ton robot repasse sur ses cases : regarde `couleur()` ») et à la fin.
 
 ## Données des élèves
 
-- **Rien n'est enregistré en ligne.** La salle passe par les canaux temps réel du projet Supabase des applications du site : le prénom ou le pseudo et le code de chaque élève ne vont qu'aux joueurs de sa salle, pendant la séance. Aucun champ pour le nom ni pour l'adresse électronique.
+- **Rien n'est enregistré en ligne.** La salle passe par les canaux temps réel du projet Supabase des applications du site : le prénom ou le pseudo et le code de chaque élève ne vont qu'aux élèves de sa salle, pendant la séance. Aucun champ pour le nom ni pour l'adresse électronique.
 - **Sur l'appareil** : le pseudo, le code en cours, les étoiles et le niveau de Zéro, gardés un jour au plus.
 - **Sans réseau** : l'entraînement et le défi contre Zéro marchent quand même.
 
