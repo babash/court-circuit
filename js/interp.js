@@ -101,7 +101,7 @@ function parse(src) {
         const o = take().s; if (e.k !== 'var') throw erreur('SyntaxError', e.k === 'call' ? 'cannot assign to function call here' : 'cannot assign to expression', l);
         const v = orE(); s = { k: 'set', name: e.name, e: o === '=' ? v : { k: 'bin', o: { s: o[0] }, a: { k: 'var', name: e.name, line: l }, b: v }, line: l };
       } else if (e.k === 'var' && ACTIONS_ET_CAPTEURS.has(e.name)) {
-        throw erreur('SyntaxError', `Missing parentheses in call to '${e.name}'. Did you mean ${e.name}()?`, l);
+        throw erreur('SyntaxError', `Missing parentheses in call to '${e.name}'. Did you mean ${e.name}(...)?`, l);
       } else s = { k: 'expr', e, line: l };
       if (!fin()) throw erreur('SyntaxError', 'invalid syntax', l);
     }
@@ -116,20 +116,31 @@ function parse(src) {
   }
   return { prog, rows };
 }
-const ACTIONS_ET_CAPTEURS = new Set(['avancer', 'gauche', 'droite', 'eclair', 'attendre', 'libre', 'couleur', 'cible', 'distance', 'score', 'score_adversaire']);
+const ACTIONS_ET_CAPTEURS = new Set(['nord', 'sud', 'est', 'ouest', 'eclair', 'poserCaisse', 'attendre',
+  'obstacleNord', 'obstacleSud', 'obstacleEst', 'obstacleOuest', 'couleurNord', 'couleurSud', 'couleurEst', 'couleurOuest',
+  'cible', 'distance', 'caisses', 'score', 'score_adversaire']);
+// Comme Python 3.10 et suivants : un nom presque juste reçoit une proposition (« Did you mean »).
+function proche(nom, noms) {
+  const lev = (a, b) => { const d = Array.from({ length: a.length + 1 }, (_, i) => [i]); for (let j = 1; j <= b.length; j++) d[0][j] = j;
+    for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++) d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)); return d[a.length][b.length]; };
+  let best = null, bd = 99;
+  for (const n of noms) { const v = n.toLowerCase() === nom.toLowerCase() ? 0 : lev(nom.toLowerCase(), n.toLowerCase()); if (v < bd) { bd = v; best = n; } }
+  return best && bd <= Math.max(1, Math.floor(nom.length / 4)) && best !== nom ? best : null;
+}
+const nonDefini = (nom, c, line) => { const p = proche(nom, [...ACTIONS_ET_CAPTEURS, ...Object.keys(c.vars)]); return erreur('NameError', `name '${nom}' is not defined` + (p ? `. Did you mean: '${p}'?` : ''), line); };
 
 function evalE(n, c) {
   switch (n.k) {
     case 'num': return Number(n.t.s);
     case 'str': return n.t.s.slice(1, -1);
     case 'bool': return n.t.s === 'True';
-    case 'var': if (!(n.name in c.vars)) throw erreur('NameError', `name '${n.name}' is not defined`, n.line); return c.vars[n.name];
+    case 'var': if (!(n.name in c.vars)) throw nonDefini(n.name, c, n.line); return c.vars[n.name];
     case 'not': return !evalE(n.a, c);
     case 'logic': { const a = evalE(n.a, c); return n.o.s === 'and' ? (a && evalE(n.b, c)) : (a || evalE(n.b, c)); }
     case 'cmp': { const a = evalE(n.a, c), b = evalE(n.b, c); return ({ '<': a < b, '<=': a <= b, '>': a > b, '>=': a >= b, '==': a === b, '!=': a !== b })[n.o.s]; }
-    case 'bin': { const a = evalE(n.a, c), b = evalE(n.b, c); if (n.o.s === '/' && b === 0) throw erreur('ZeroDivisionError', 'division by zero', c.line); return ({ '+': a + b, '-': a - b, '*': a * b, '/': a / b, '%': a % b })[n.o.s]; }
+    case 'bin': { const a = evalE(n.a, c), b = evalE(n.b, c); if (n.o.s === '/' && b === 0) throw erreur('ZeroDivisionError', 'division by zero', c.line); if (n.o.s === '%' && b === 0) throw erreur('ZeroDivisionError', 'integer modulo by zero', c.line); return ({ '+': a + b, '-': a - b, '*': a * b, '/': a / b, '%': a % b })[n.o.s]; }
     case 'call': {
-      const f = c.env[n.t.s]; if (!f) throw erreur('NameError', `name '${n.t.s}' is not defined`, n.line);
+      const f = c.env[n.t.s]; if (!f) throw nonDefini(n.t.s, c, n.line);
       const max = f.nargs ?? 0;
       if (n.args.length > max) throw erreur('TypeError', `${n.t.s}() takes ${max} positional argument${max > 1 ? 's' : ''} but ${n.args.length} ${n.args.length > 1 ? 'were' : 'was'} given`, n.line);
       return f(...n.args.map(a => evalE(a, c)));
