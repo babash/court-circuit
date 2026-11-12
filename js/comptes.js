@@ -38,7 +38,9 @@ function lireCodeEleve(texte) {
 }
 
 const Comptes = (() => {
-  const cfg = window.CC_CONFIG || {}, demo = modeDemo();
+  const cfg = window.CC_CONFIG || {};
+  // l'imitation seulement avec ?demo ou sans projet configuré : jamais par accident (un fichier qui ne se charge pas, par exemple)
+  const demo = (() => { modeDemo(); try { return sessionStorage.getItem('cc-demo') === '1' || !cfg.SUPABASE_URL; } catch (e) { return params.has('demo') || !cfg.SUPABASE_URL; } })();
   const actif = demo || !!cfg.COMPTES;
   let session = stock.lire('compte'); // { jeton, pseudo } : un jour au plus
   async function rpc(fn, args) {

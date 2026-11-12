@@ -29,8 +29,9 @@ begin;
 --  Les données d'élèves : un prénom ou un pseudo (2 à 24 caractères, jamais le
 --  nom de famille), le code, les programmes Python (30 au plus, 4 000
 --  caractères chacun), la date de création et celle de la dernière visite.
---  Un compte est effacé 12 mois après la dernière visite ; l'élève peut
---  l'effacer avant, avec « Effacer mes données ».
+--  Un compte est effacé 12 mois après la dernière visite (le ménage passe au
+--  plus une fois par heure, quand un·e élève crée son code, entre ou reprend
+--  sa session) ; l'élève peut l'effacer avant, avec « Effacer mes données ».
 --
 --  Ce que ce fichier ne change pas : aucun objet existant, aucune autre
 --  application, aucun réglage de l'API.
@@ -245,7 +246,10 @@ set search_path = ''
 as $$
 declare ps text := btrim(regexp_replace(left(coalesce(p_pseudo, ''), 100), '\s+', ' ', 'g')); n record; e court_circuit.eleves;
 begin
-  if char_length(ps) < 2 or char_length(ps) > 24 then
+  -- 2 à 24 caractères, sans caractère de contrôle ni caractère invisible (écrits par leur code)
+  if char_length(ps) < 2 or char_length(ps) > 24
+     or ps ~ ('[' || chr(1) || '-' || chr(31) || chr(127) || '-' || chr(159) || chr(173) || chr(8203) || '-' || chr(8207)
+              || chr(8232) || '-' || chr(8238) || chr(8288) || '-' || chr(8303) || chr(65279) || ']') then
     return json_build_object('ok', false, 'message', 'Écris un prénom ou un pseudo de 2 à 24 caractères (jamais ton nom de famille).');
   end if;
   if not commun.essai_permis('court_circuit', 'creation', 60) then
@@ -259,6 +263,7 @@ begin
 end $$;
 
 -- Entrer avec son code : 20 échecs au plus par heure et par réseau.
+-- Chaque entrée tire un nouveau jeton : un poste partagé oublié ne garde pas l'accès.
 create or replace function public.cc_connexion(p_code text)
 returns json
 language plpgsql volatile security definer
@@ -269,7 +274,7 @@ begin
   if not commun.essai_permis('court_circuit', 'eleve', 20) then
     return json_build_object('ok', false, 'message', 'Trop d''essais depuis ce réseau. Attends un peu, ou demande de l''aide à ton enseignant·e.');
   end if;
-  update court_circuit.eleves x set vu_le = now() where x.code = c returning * into e;
+  update court_circuit.eleves x set vu_le = now(), jeton = gen_random_uuid() where x.code = c returning * into e;
   if e.id is null then
     perform commun.noter_echec('court_circuit', 'eleve');
     perform pg_sleep(0.3);
@@ -291,6 +296,7 @@ begin
     return json_build_object('ok', false, 'message', 'Ta session a expiré : entre de nouveau ton code.');
   end if;
   select * into e from court_circuit.eleves x where x.id = v_eleve;
+  perform court_circuit.menage_si_besoin();
   return json_build_object('ok', true, 'pseudo', e.pseudo, 'code_affiche', e.code_affiche,
     'programmes', coalesce((select json_agg(json_build_object('id', p.id, 'nom', p.nom, 'texte', p.texte, 'modifie_le', p.modifie_le) order by p.modifie_le desc)
                             from court_circuit.programmes p where p.eleve_id = e.id), '[]'::json));

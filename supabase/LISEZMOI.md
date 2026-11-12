@@ -6,6 +6,7 @@ Ce dossier contient les migrations de la base de Court-circuit. Le jeu lui-même
 - **Le schéma :** `court_circuit`, que l'API n'expose pas. Les fonctions d'entrée sont dans `public`, avec le préfixe `cc_`.
 - **Les règles suivies :** `architecture/regles-supabase.md` (P1 à P10, M1 à M8) et la spécification des codes, `architecture/codes-acces.md`.
 - **Il faut d'abord le socle commun** (`supabase/0003-schema-commun.sql` du site, appliqué le 11/11) : le compteur d'essais `commun.essais` sert ici aussi.
+- **Le registre des tables** (`commun.registre`) range `court_circuit` après la migration `base_unique_0005_registre_court_circuit` du site (`supabase/0005-registre-court-circuit.sql`), qui passe avant ou après celle-ci.
 
 ## Où en est la base
 
@@ -32,7 +33,7 @@ Chaque fichier commence par `begin;` et finit par `commit;`, chacun sur sa ligne
 | `court_circuit.normaliser_code(text)` | La forme canonique d'un code (majuscules, sans accent ni séparateur). |
 | `court_circuit.nouveau_code()` | Tire un code neuf, sans biais, jamais un code déjà pris. |
 | `court_circuit.eleve_par_jeton(uuid)` | Le compte d'un jeton, et la visite du jour. |
-| `court_circuit.menage_si_besoin()` | Au plus une fois par heure : efface les comptes sans visite depuis 12 mois. |
+| `court_circuit.menage_si_besoin()` | Au plus une fois par heure, quand un·e élève crée son code, entre ou reprend sa session : efface les comptes sans visite depuis 12 mois. Si plus personne n'ouvre Court-circuit, rien n'est effacé jusqu'à la visite suivante. |
 
 Toutes les tables ont la RLS, sans règle et sans aucun droit pour `anon` ni `authenticated`. Les fonctions internes ne sont appelables par personne.
 
@@ -40,14 +41,14 @@ Toutes les tables ont la RLS, sans règle et sans aucun droit pour `anon` ni `au
 
 | Fonction | Rôle |
 |---|---|
-| `cc_solo(p_pseudo)` | Crée un compte et renvoie le code et le jeton. 60 créations au plus par heure et par réseau (`commun.essais`, type `creation`). |
-| `cc_connexion(p_code)` | Entre avec son code. 20 échecs au plus par heure et par réseau (type `eleve`), 0,3 s d'attente après un échec. |
+| `cc_solo(p_pseudo)` | Crée un compte et renvoie le code et le jeton. 60 créations au plus par heure et par réseau (`commun.essais`, type `creation`). Le pseudo refuse les caractères de contrôle et les caractères invisibles. |
+| `cc_connexion(p_code)` | Entre avec son code et **tire un nouveau jeton** : un poste partagé oublié ne garde pas l'accès (l'autre appareil redonne alors son code). 20 échecs au plus par heure et par réseau (type `eleve`), 0,3 s d'attente après un échec. |
 | `cc_reprise(p_jeton)` | Le pseudo, le code et les programmes de l'élève, en un seul objet JSON. |
 | `cc_enregistrer(p_jeton, p_nom, p_texte, p_id)` | Garde un programme (ou met à jour celui du même nom). |
 | `cc_supprimer(p_jeton, p_id)` | Supprime un programme. |
 | `cc_effacer_moi(p_jeton)` | Efface le compte et tous ses programmes. |
 
-Chaque fonction borne ses paramètres et répond `{ "ok": false, "message": … }` plutôt que de lever une exception, qui annulerait le compteur d'essais. Le code d'un·e élève ne sort que par ses propres fonctions.
+Chaque fonction borne ses paramètres et répond `{ "ok": false, "message": … }` plutôt que de lever une exception, qui annulerait le compteur d'essais. Seul un jeton mal formé (qui n'a pas la forme d'un uuid) est refusé par l'API elle-même (erreur 400) : aucun compteur ne porte sur les jetons, qui ne se devinent pas. Le code d'un·e élève ne sort que par ses propres fonctions.
 
 **Ce qui n'y est pas encore** (suite de la règle 21) : le code enseignant·e et la liste des codes de ses élèves, les classes. La page de la salle de classe reste sans compte.
 
@@ -82,7 +83,8 @@ Puis les conseillers (`get_advisors`) : seuls « RLS sans règle » (0008) et «
 ## L'essai local
 
 La migration a été essayée sur un PostgreSQL local (rôles `anon`, `authenticated` et `service_role` comme Supabase, `pgcrypto` dans `extensions`, socle commun appliqué), avec des données inventées, jamais sur la base en ligne :
-- appliquée deux fois de suite sans erreur, puis retirée par l'inverse et appliquée de nouveau ;
+- appliquée deux fois de suite sans erreur, puis retirée par l'inverse et appliquée de nouveau ; l'inverse s'arrête si une migration plus récente ou un objet hors du schéma se sert de `court_circuit` ;
+- relue par l'Architecte, qui l'a rejouée à part (78 contrôles en `anon`, la liste des 64 mots vérifiée contre les trois autres listes) ;
 - en rôle `anon` : création, connexion avec le code tapé en minuscules avec des espaces, programmes gardés, mis à jour par leur nom, supprimés, compte effacé ; la lecture des tables, les fonctions internes et `commun` sont refusées ;
 - le compteur : 20 échecs de connexion, puis refus jusqu'à la fin de l'heure (un autre réseau n'est pas bloqué) ; 60 créations, puis refus ;
 - le tirage : 5 000 codes tous différents, chaque mot tiré 59 à 99 fois, chaque centaine de chiffres 469 à 545 fois ;
