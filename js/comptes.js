@@ -45,7 +45,8 @@ const Comptes = (() => {
   let session = stock.lire('compte'); // { jeton, pseudo } : un jour au plus
   async function rpc(fn, args) {
     if (demo) return Imitation[fn](args);
-    const r = await fetch(cfg.SUPABASE_URL + '/rest/v1/rpc/' + fn, { method: 'POST', headers: { apikey: cfg.SUPABASE_KEY, Authorization: 'Bearer ' + cfg.SUPABASE_KEY, 'Content-Type': 'application/json' }, body: JSON.stringify(args) });
+    // la clé publique : « publishable » (sb_publishable_…) ou ancienne clé « anon » (un JWT) ; seul un JWT va aussi dans Authorization (T57)
+    const r = await fetch(cfg.SUPABASE_URL + '/rest/v1/rpc/' + fn, { method: 'POST', headers: Object.assign({ apikey: cfg.SUPABASE_KEY, 'Content-Type': 'application/json' }, String(cfg.SUPABASE_KEY).indexOf('eyJ') === 0 ? { Authorization: 'Bearer ' + cfg.SUPABASE_KEY } : {}), body: JSON.stringify(args) });
     if (!r.ok) throw new Error('La base ne répond pas (' + r.status + ').');
     return r.json();
   }
