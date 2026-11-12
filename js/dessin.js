@@ -1,4 +1,4 @@
-/* Dessin du plateau : cases, peinture électrique, robots, éclairs.
+/* Dessin du plateau : cases, peinture électrique, caisses, robots, éclairs.
    creerPlateau(canvas) renvoie un objet qui dessine une partie ; vue.retourne place le joueur du haut en bas, en cyan. */
 const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const COL = { K: '#22D3EE', Z: '#FF5CA8' }, DARK = { K: '#0B5568', Z: '#8E1450' }, FILL = { 1: 'rgba(34,211,238,', 2: 'rgba(255,92,168,' };
@@ -32,6 +32,14 @@ function painted(x, y, c, s) {
   else if (v === 2) { ctx.moveTo(px + b, py + C * .2); ctx.lineTo(px + b, py + C * .45); ctx.lineTo(px + a, py + C * .55); ctx.lineTo(px + a, py + C * .8); }
   else { ctx.moveTo(px + C * .2, py + b); ctx.lineTo(px + C * .5, py + b); ctx.lineTo(px + C * .5, py + a); ctx.lineTo(px + C * .8, py + a); }
   ctx.stroke(); ctx.fillStyle = f + '1)'; ctx.beginPath(); ctx.arc(px + (v % 2 ? C * .8 : b), py + (v % 2 ? (v === 1 ? b : a) : C * .8), C * .06, 0, 7); ctx.fill();
+}
+// une caisse : elle bloque la case et garde sa couleur ; le liseré dit à qui elle est
+function caisse(x, y, w) {
+  const px = VX(x) * C, py = VY(y) * C, m = C * .16, s = C - 2 * m;
+  ctx.fillStyle = '#5B4630'; rr(px + m, py + m, s, s, C * .08); ctx.fill();
+  ctx.strokeStyle = '#8C6B45'; ctx.lineWidth = Math.max(1, C * .05); ctx.beginPath();
+  ctx.moveTo(px + m, py + m); ctx.lineTo(px + m + s, py + m + s); ctx.moveTo(px + m + s, py + m); ctx.lineTo(px + m, py + m + s); ctx.stroke();
+  ctx.strokeStyle = COL[QUI(w)]; ctx.lineWidth = Math.max(1.5, C * .07); rr(px + m, py + m, s, s, C * .08); ctx.stroke();
 }
 function robot(w, x, y, ang, t, st) {
   if (FLIP) { x = W - 1 - x; y = H - 1 - y; ang += Math.PI; } w = QUI(w);
@@ -73,6 +81,7 @@ function dessiner(frames, p, opt = {}) {
     floor(x, y); const c = f.paint[k];
     if (c) { const fresh = prev.paint[k] !== c && i > 0; painted(x, y, c, fresh && !RM ? Math.min(1, .35 + fr * .65) : 1); }
   }
+  for (const [k, w] of (f.cr || [])) caisse(k % W, Math.floor(k / W), w);
   if (opt.path && opt.path.length > 1) {
     ctx.strokeStyle = 'rgba(34,211,238,.85)'; ctx.lineWidth = Math.max(2, C * .08); ctx.setLineDash([C * .16, C * .12]); ctx.lineCap = 'round';
     ctx.beginPath(); opt.path.forEach(([x, y], j) => j ? ctx.lineTo((VX(x) + .5) * C, (VY(y) + .5) * C) : ctx.moveTo((VX(x) + .5) * C, (VY(y) + .5) * C)); ctx.stroke(); ctx.setLineDash([]);
@@ -81,7 +90,8 @@ function dessiner(frames, p, opt = {}) {
   // éclairs et chocs récents
   for (let j = Math.max(1, i - 5); j <= i; j++) for (const e of frames[j].ev) {
     const age = (i - j + fr) / 5; if (age > 1) continue;
-    if (e.type === 'eclair') { let [dx, dy] = DV[e.d]; if (FLIP) { dx = -dx; dy = -dy; } const len = Math.max(.6, e.len), ex = VX(e.x), ey = VY(e.y); bolt((ex + .5 + dx * .35) * C, (ey + .5 + dy * .35) * C, (ex + .5 + dx * len) * C, (ey + .5 + dy * len) * C, COL[QUI(e.who)], 1 - age, j); }
+    if (e.type === 'eclair') for (const [d, l] of e.rayons) { let [dx, dy] = DV[d]; if (FLIP) { dx = -dx; dy = -dy; } const len = Math.max(.45, l), ex = VX(e.x), ey = VY(e.y); bolt((ex + .5 + dx * .35) * C, (ey + .5 + dy * .35) * C, (ex + .5 + dx * len) * C, (ey + .5 + dy * len) * C, COL[QUI(e.who)], (1 - age) * (e.hit ? 1 : .7), j + d); }
+    if (e.type === 'caisse') { ctx.strokeStyle = `rgba(255,255,255,${.8 * (1 - age)})`; ctx.lineWidth = Math.max(1, C * .06); ctx.strokeRect(VX(e.x) * C + 1, VY(e.y) * C + 1, C - 2, C - 2); }
     if (e.type === 'hit') { ctx.fillStyle = `rgba(255,255,255,${.5 * (1 - age)})`; ctx.fillRect((VX(e.x) - 1) * C, (VY(e.y) - 1) * C, C * 3, C * 3); }
   }
   for (const w of ['Z', 'K']) {

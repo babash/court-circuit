@@ -2,12 +2,12 @@
    Le journal de chaque joueur (code de départ, puis chaque code envoyé avec son instant) suffit à tout recalculer :
    deux appareils qui ont le même journal voient exactement le même match. */
 const DUREE_TICKS = 300; // 30 s
-const ZERO = [
-  { nom: 'trace un carré', code: 'for i in range(4):\n    for j in range(3):\n        avancer()\n    droite()' },
-  { nom: 'tourne en boucle', code: 'while True:\n    for i in range(4):\n        avancer()\n    droite()' },
-  { nom: 'rebondit sur les murs', code: 'while True:\n    while libre():\n        avancer()\n    droite()' },
-  { nom: 'cherche les cases', code: 'while True:\n    if libre() and couleur() != "moi":\n        avancer()\n    elif libre("droite") and couleur("droite") != "moi":\n        droite()\n    elif libre("gauche") and couleur("gauche") != "moi":\n        gauche()\n    elif libre():\n        avancer()\n    else:\n        droite()' },
-  { nom: 'électrise', code: 'while True:\n    if cible():\n        eclair()\n    elif libre() and couleur() != "moi":\n        avancer()\n    elif libre("droite") and couleur("droite") != "moi":\n        droite()\n    elif libre("gauche") and couleur("gauche") != "moi":\n        gauche()\n    elif libre():\n        avancer()\n    else:\n        droite()' },
+const ZERO = [ // écrits du point de vue de Zéro : son nord va vers toi
+  { nom: 'fait quelques pas', code: 'for i in range(3):\n    est()\nfor i in range(3):\n    nord()' },
+  { nom: 'fait des zigzags', code: 'while True:\n    for i in range(4):\n        nord()\n    est()\n    for i in range(4):\n        sud()\n    est()' },
+  { nom: 'longe les murs', code: 'while True:\n    while not obstacleNord():\n        nord()\n    est()\n    while not obstacleSud():\n        sud()\n    est()' },
+  { nom: 'cherche les cases vides', code: 'while True:\n    if couleurNord() == "vide":\n        nord()\n    elif couleurEst() == "vide":\n        est()\n    elif couleurOuest() == "vide":\n        ouest()\n    elif couleurSud() == "vide":\n        sud()\n    elif not obstacleNord():\n        nord()\n    else:\n        est()' },
+  { nom: 'électrise', code: 'n = 0\nwhile True:\n    n += 1\n    if cible():\n        eclair()\n    elif couleurNord() != "moi" and couleurNord() != "mur":\n        nord()\n    elif couleurEst() != "moi" and couleurEst() != "mur":\n        est()\n    elif couleurOuest() != "moi" and couleurOuest() != "mur":\n        ouest()\n    elif couleurSud() != "moi" and couleurSud() != "mur":\n        sud()\n    elif n % 4 == 0 and not obstacleOuest():\n        ouest()\n    elif n % 3 == 0 and not obstacleSud():\n        sud()\n    elif not obstacleEst():\n        est()\n    else:\n        nord()' },
 ];
 class Partie {
   constructor({ carte, codeK, codeZ, seed = 1, solo = false, duree = DUREE_TICKS }) {
