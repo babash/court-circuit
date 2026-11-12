@@ -38,7 +38,7 @@ const MOTS = {
     { mot: 'or', role: 'Au moins une des deux conditions doit être vraie.' },
     { mot: 'not', role: 'Inverse la condition : vrai devient faux.' },
     { mot: 'def zigzag():', role: 'Définit une fonction : un nom pour les lignes décalées en dessous. zigzag() les fait ensuite, à chaque appel.' },
-    { mot: 'def avancer(n):', role: 'Une fonction avec un paramètre : avancer(3) fait les lignes de la fonction avec n = 3.' },
+    { mot: 'def grimper(n):', role: 'Une fonction avec un paramètre : grimper(3) fait les lignes de la fonction avec n = 3.' },
     { mot: 'return', role: 'Dans une fonction : la termine et renvoie une valeur (return couleurNord() == "vide").' },
     { mot: '== != < <= > >=', role: 'Comparer : égal, différent, plus petit, plus petit ou égal, plus grand, plus grand ou égal.' },
   ],

@@ -348,7 +348,7 @@ function finEcritureSalle() {
   // comme la salle, qui annule un duel sans code 20 s après la fin de l'écriture : un·e élève prêt·e
   // en avance ne passe donc jamais contre Zéro pendant que son adversaire écrit encore.
   const reste = Math.max(0, (S.finEcritureA || performance.now()) - performance.now());
-  clearTimeout(S.attenteTimer); S.attenteTimer = setTimeout(() => { if (S.etat === 'attente') { S.advCode0 = ZERO[2].code; S.advNom = 'Zéro'; S.advId = null; dire('Ton adversaire ne répond pas : ce duel est annulé, tu affrontes Zéro pour t’entraîner (sans effet sur ton Elo).', 'aide', 5000); commencerDuelSalle(); } }, reste + 20000);
+  clearTimeout(S.attenteTimer); S.attenteTimer = setTimeout(() => { if (S.etat === 'attente') { S.advCode0 = ZERO[2].code; S.advNom = 'Zéro'; S.advId = null; commencerDuelSalle(); dire('Ton adversaire ne répond pas : ce duel est annulé, tu affrontes Zéro pour t’entraîner (sans effet sur ton Elo).', 'aide', 6000); } }, reste + 20000);
   if (S.advCode0 != null) commencerDuelSalle();
 }
 function commencerDuelSalle() {
@@ -492,7 +492,7 @@ const OUTILS = {
   Actions: [['nord()', 1], ['sud()', 1], ['est()', 1], ['ouest()', 1], ['eclair()', 1], ['poserCaisse()', 1], ['attendre()', 1]],
   Boucles: [['for i in range(3):\n    nord()', 1, 'for'], ['while True:\n    nord()', 1, 'while True'], ['while not obstacleNord():\n    nord()', 1, 'while not obstacleNord()']],
   Conditions: [['if obstacleNord():\n    est()\nelse:\n    nord()', 1, 'if … else'], ['elif obstacleEst():\n    ouest()', 1, 'elif'], ['obstacleNord()', 0], ['obstacleEst()', 0], ['obstacleSud()', 0], ['obstacleOuest()', 0], ['couleurNord() != "moi"', 0], ['couleurEst() == "vide"', 0], ['cible()', 0], ['cibleEst()', 0], ['distance()', 0], ['caisses()', 0]],
-  Fonctions: [['def zigzag():\n    nord()\n    est()', 1, 'def zigzag()'], ['def avancer(n):\n    for i in range(n):\n        nord()', 1, 'def avancer(n)'], ['def libreNord():\n    return not obstacleNord() and couleurNord() != "moi"', 1, 'def … return'], ['zigzag()', 1], ['avancer(3)', 1]],
+  Fonctions: [['def zigzag():\n    nord()\n    est()', 1, 'def zigzag()'], ['def grimper(n):\n    for i in range(n):\n        nord()', 1, 'def grimper(n)'], ['def libreNord():\n    return not obstacleNord() and couleurNord() != "moi"', 1, 'def … return'], ['zigzag()', 1], ['grimper(3)', 1]],
   Opérateurs: [[' and ', 0, 'and'], [' or ', 0, 'or'], ['not ', 0, 'not'], [' == ', 0, '=='], [' != ', 0, '!='], [' <= ', 0, '<='], [' < ', 0, '<'], [' > ', 0, '>']],
 };
 let ongletOutil = 'Actions';
@@ -500,11 +500,18 @@ function outils() {
   $('onglets').innerHTML = Object.keys(OUTILS).map(k => `<button class="onglet" role="tab" aria-selected="${k === ongletOutil}" data-o="${k}">${k}</button>`).join('') + (matchMedia('(pointer:coarse)').matches ? '<button class="onglet" data-d="1" aria-label="Décaler la ligne vers la droite">⇥</button><button class="onglet" data-d="-1" aria-label="Décaler la ligne vers la gauche">⇤</button>' : '');
   $('mots').innerHTML = OUTILS[ongletOutil].map(([t, bloc, lab], i) => `<button class="mot${/^(for|while|if|elif|def|return)/.test(t) ? ' kw' : /^ ?(and|or|not|==|!=|<|>)/.test(t) ? ' op' : ''}" data-i="${i}" title="${esc(t)}">${esc(lab || t.trim())}</button>`).join('');
 }
+// un code gardé de la première version (avancer(), droite()…) ne marche plus : on repart du code de départ ;
+// mais un code qui définit lui-même une fonction de ce nom (def droite(): …) est gardé
+function codeGardeValable(code) {
+  if (!code) return false;
+  const definis = new Set(Array.from(code.matchAll(/^[ \t]*def[ \t]+([A-Za-z_À-ÿ][\wÀ-ÿ]*)/gm), m => m[1]));
+  return !Array.from(code.matchAll(/\b(avancer|droite|gauche|libre|couleur)\(/g)).some(m => !definis.has(m[1]));
+}
 function init() {
   PL = creerPlateau($('plateau'));
   S.zLv = stock.lire('zero') || 0;
   const garde = stock.lire('code');
-  ED = creerEditeur($('editeur'), { doc: garde && !/\b(avancer|droite|gauche|libre|couleur)\(/.test(garde) ? garde : CODE_DEPART, onChange: () => { clearTimeout(init.t); init.t = setTimeout(majCode, 200); majBoutons(); }, onEnvoi: action });
+  ED = creerEditeur($('editeur'), { doc: codeGardeValable(garde) ? garde : CODE_DEPART, onChange: () => { clearTimeout(init.t); init.t = setTimeout(majCode, 200); majBoutons(); }, onEnvoi: action });
   $('go').onclick = action; $('bCodes').onclick = () => mesCodes();
   $('errBouton').onclick = () => { const v = $('errFr').hidden; $('errFr').hidden = !v; $('errBouton').textContent = v ? 'Masquer l’explication' : 'Expliquer en français'; };
   $('onglets').onclick = e => { const b = e.target.closest('button'); if (!b) return; if (b.dataset.o) { ongletOutil = b.dataset.o; outils(); } if (b.dataset.d) ED.decaler(+b.dataset.d); };
