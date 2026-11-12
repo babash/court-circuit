@@ -58,6 +58,9 @@ function creerEditeur(parent, { doc = '', onChange = () => {}, onEnvoi = null, l
     S('while not ${obstacleNord()}:\n\t${nord()}', { label: 'while not', detail: 'tant qu’il n’y a pas d’obstacle', info: 'Répète tant qu’il n’y a pas d’obstacle.', type: 'keyword', boost: 3 }),
     S('while ${condition}:\n\t${nord()}', { label: 'while', detail: 'tant que…', info: 'Répète tant que la condition est vraie.', type: 'keyword', boost: 2 }),
     S('if ${obstacleNord()}:\n\t${est()}', { label: 'if', detail: 'si…', info: 'Fait les lignes décalées seulement si la condition est vraie.', type: 'keyword', boost: 3 }),
+    S('def ${zigzag}():\n\t${nord()}\n\t${est()}', { label: 'def', detail: 'définir une fonction', info: 'Donne un nom à un groupe de lignes. On l’appelle ensuite par son nom, par exemple zigzag(), autant de fois qu’on veut.', type: 'keyword', boost: 1 }),
+    S('return ${valeur}', { label: 'return', detail: 'renvoyer (dans une fonction)', info: 'Termine la fonction et renvoie une valeur, par exemple : return couleurNord() == "vide"', type: 'keyword', boost: 0 }),
+    { label: 'pass', type: 'keyword', detail: 'ne rien faire', info: 'Une ligne qui ne fait rien : pour une fonction ou un bloc encore vide.', boost: -1 },
   ];
   const SUITE_IF = [
     S('elif ${obstacleEst()}:\n\t${ouest()}', { label: 'elif', detail: 'sinon, si…', type: 'keyword' }),
@@ -66,17 +69,21 @@ function creerEditeur(parent, { doc = '', onChange = () => {}, onEnvoi = null, l
   const FR = [ // mots français → Python
     ['pour', 'for'], ['repeter', 'for'], ['répéter', 'for'], ['tant', 'while not'], ['toujours', 'while True'], ['si', 'if'], ['sinon', 'else'], ['sinonsi', 'elif'],
     ['haut', 'nord()'], ['monter', 'nord()'], ['bas', 'sud()'], ['descendre', 'sud()'], ['droite', 'est()'], ['gauche', 'ouest()'], ['avancer', 'nord()'],
+    ['cibledroite', 'cibleEst()'], ['ciblegauche', 'cibleOuest()'], ['ciblehaut', 'cibleNord()'], ['ciblebas', 'cibleSud()'],
+    ['fonction', 'def'], ['definir', 'def'], ['définir', 'def'], ['renvoyer', 'return'], ['rien', 'pass'],
     ['caisse', 'poserCaisse()'], ['poser', 'poserCaisse()'], ['éclair', 'eclair()'],
   ];
   const DIRS_C = ['Nord', 'Sud', 'Est', 'Ouest'];
+  const role = mot => (MOTS.capteurs.find(x => x.mot === mot) || {}).role || '';
   const CAPTEURS_C = [
-    ...DIRS_C.map((d, i) => ({ label: `obstacle${d}()`, type: 'function', detail: 'capteur', info: MOTS.capteurs[i].role, boost: 5 - i })),
+    ...DIRS_C.map((d, i) => ({ label: `obstacle${d}()`, type: 'function', detail: 'capteur', info: role(`obstacle${d}()`), boost: 5 - i })),
     ...DIRS_C.map((d, i) => ({ label: `not obstacle${d}()`, type: 'function', detail: 'pas d’obstacle', info: `Vrai si la case ${['au nord', 'au sud', 'à l’est', 'à l’ouest'][i]} est libre.`, boost: 4 - i })),
     ...DIRS_C.map((d, i) => ({ label: `couleur${d}() != "moi"`, type: 'function', detail: 'pas encore à toi', info: `Vrai si la case ${['au nord', 'au sud', 'à l’est', 'à l’ouest'][i]} n’est pas déjà à toi (attention : un mur donne "mur").`, boost: 2 })),
-    ...DIRS_C.map((d, i) => ({ label: `couleur${d}()`, type: 'function', detail: 'capteur', info: MOTS.capteurs[4 + i].role })),
-    { label: 'cible()', type: 'function', detail: 'capteur', info: MOTS.capteurs[8].role },
-    { label: 'distance()', type: 'function', detail: 'capteur', info: MOTS.capteurs[9].role },
-    { label: 'caisses()', type: 'function', detail: 'capteur', info: MOTS.capteurs[10].role },
+    ...DIRS_C.map((d, i) => ({ label: `couleur${d}()`, type: 'function', detail: 'capteur', info: role(`couleur${d}()`) })),
+    { label: 'cible()', type: 'function', detail: 'capteur', info: role('cible()') },
+    ...DIRS_C.map(d => ({ label: `cible${d}()`, type: 'function', detail: 'capteur', info: role(`cible${d}()`) })),
+    { label: 'distance()', type: 'function', detail: 'capteur', info: role('distance()') },
+    { label: 'caisses()', type: 'function', detail: 'capteur', info: role('caisses()') },
     { label: 'and', type: 'keyword', detail: 'et', info: 'Les deux conditions doivent être vraies.' },
     { label: 'or', type: 'keyword', detail: 'ou', info: 'Au moins une des deux conditions doit être vraie.' },
     { label: 'not', type: 'keyword', detail: 'non', info: 'Inverse la condition.' },
@@ -86,7 +93,14 @@ function creerEditeur(parent, { doc = '', onChange = () => {}, onEnvoi = null, l
     const vus = new Set(); const txt = state.doc.sliceString(0, avant);
     for (const m of txt.matchAll(/^\s*(\w+)\s*(?:=|\+=|-=)(?!=)/gm)) vus.add(m[1]);
     for (const m of txt.matchAll(/^\s*for\s+(\w+)\s+in/gm)) vus.add(m[1]);
-    return [...vus].filter(v => !ACTIONS_ET_CAPTEURS.has(v)).map(v => ({ label: v, type: 'variable', detail: 'variable' }));
+    // les fonctions de l'élève (définies plus haut ou plus bas : on peut appeler une fonction définie avant l'appel)
+    const fonctions = [];
+    for (const m of state.doc.toString().matchAll(/^\s*def\s+(\w+)\s*\(([^)]*)\)/gm)) {
+      const params = m[2].split(',').map(p => p.trim()).filter(Boolean);
+      if (!fonctions.some(f => f.label === m[1] + '()')) fonctions.push({ label: m[1] + '()', apply: m[1] + '(' + (params.length ? '' : ')'), type: 'function', detail: params.length ? 'ta fonction (' + params.join(', ') + ')' : 'ta fonction', boost: 4 });
+      if (m.index < avant) for (const p of params) vus.add(p);
+    }
+    return [...[...vus].filter(v => !ACTIONS_ET_CAPTEURS.has(v) && !fonctions.some(f => f.label === v + '()')).map(v => ({ label: v, type: 'variable', detail: 'variable' })), ...fonctions];
   }
   function source(ctx) {
     const ligne = ctx.state.doc.lineAt(ctx.pos), avant = ligne.text.slice(0, ctx.pos - ligne.from);
@@ -98,15 +112,15 @@ function creerEditeur(parent, { doc = '', onChange = () => {}, onEnvoi = null, l
     if (m) return { from: ctx.pos - m[2].length, options: (m[1] === 'caisses' ? ['0', '1', '2', '3'] : ['1', '2', '3', '4']).map(n => ({ label: n, type: 'text', detail: 'nombre' })), validFor: /^\d*$/ };
     const mot = ctx.matchBefore(/[\wÀ-ÿ]*/);
     if (!mot || (mot.from === mot.to && !ctx.explicit)) return null;
+    const frDe = bases => FR.map(([f, py]) => { const base = bases.find(o => o.label === py); return base ? { ...base, label: f, displayLabel: f + ' → ' + py, boost: -1 } : null; }).filter(Boolean);
     const enTete = /^\s*(if|elif|while)\b/.test(avant) && !avant.includes(':');
-    if (enTete) return { from: mot.from, options: [...CAPTEURS_C, ...variables(ctx.state, ligne.from)], validFor: /^[\wÀ-ÿ]*$/ };
     const debut = /^\s*[\wÀ-ÿ]*$/.test(avant);
-    if (!debut) return { from: mot.from, options: [...CAPTEURS_C, ...variables(ctx.state, ligne.from)], validFor: /^[\wÀ-ÿ]*$/ };
+    if (enTete || !debut) return { from: mot.from, options: [...CAPTEURS_C, ...variables(ctx.state, ligne.from), ...frDe(CAPTEURS_C)], validFor: /^[\wÀ-ÿ]*$/ };
     // début de ligne : actions, blocs, et elif / else s'il y a un if au même niveau au-dessus
     const dec = avant.length - avant.trimStart().length; let suite = false;
     // le dernier en-tête de même niveau au-dessus (les lignes plus décalées sont son bloc)
     for (let n = ligne.number - 1; n >= 1; n--) { const t = ctx.state.doc.line(n).text; if (!t.trim()) continue; const d = t.length - t.trimStart().length; if (d < dec) break; if (d === dec) { suite = /^\s*(if|elif)\b/.test(t); break; } }
-    const fr = FR.map(([f, py]) => { const base = [...ACTIONS_C, ...BLOCS, ...SUITE_IF].find(o => o.label === py); return base ? { ...base, label: f, displayLabel: f + ' → ' + py, boost: -1 } : null; }).filter(Boolean);
+    const fr = frDe([...ACTIONS_C, ...BLOCS, ...SUITE_IF]);
     return { from: mot.from, options: [...ACTIONS_C, ...BLOCS, ...(suite ? SUITE_IF : []), ...variables(ctx.state, ligne.from), ...fr], validFor: /^[\wÀ-ÿ]*$/ };
   }
 

@@ -47,11 +47,14 @@ function createMatch(cfg) {
   function makeCtx(w) {
     const p = P[w], o = () => P[other(w)];
     const obstacle = d => () => { const [x, y] = voisin(w, d); return isBlock(x, y) || (o().x === x && o().y === y); };
+    const cibleVers = d => () => { const q = o(); if (q.frozen > 0 || q.immune > 0) return false; return rayons(w)[monde(w, d)].touche; };
     const couleur = d => () => { const [x, y] = voisin(w, d); if (isBlock(x, y)) return 'mur'; const c = paint[key(x, y)]; return c === 0 ? 'vide' : c === COL[w] ? 'moi' : 'adversaire'; };
     const env = {
       obstacleNord: obstacle(0), obstacleEst: obstacle(1), obstacleSud: obstacle(2), obstacleOuest: obstacle(3),
       couleurNord: couleur(0), couleurEst: couleur(1), couleurSud: couleur(2), couleurOuest: couleur(3),
       cible: () => { const q = o(); if (q.frozen > 0 || q.immune > 0) return false; return rayons(w).some(r => r.touche); },
+      // la même chose dans une seule direction, vue par l'élève (le nord est en haut de son écran)
+      cibleNord: cibleVers(0), cibleEst: cibleVers(1), cibleSud: cibleVers(2), cibleOuest: cibleVers(3),
       distance: () => Math.abs(p.x - o().x) + Math.abs(p.y - o().y),
       caisses: () => p.caisses,
       score: () => count(w), score_adversaire: () => count(other(w)),

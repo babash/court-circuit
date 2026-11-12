@@ -10,11 +10,29 @@
 *{box-sizing:border-box;font-variant-ligatures:none}
 body{margin:0;background:#E5E7EB;color:#111;font-family:'Atkinson Hyperlegible',system-ui,sans-serif;font-size:9.4pt;line-height:1.25}
 .feuille{width:210mm;min-height:297mm;margin:10px auto;background:#fff;padding:12mm 13mm;box-shadow:0 2px 12px rgba(0,0,0,.25)}
-h1{font-family:'Chakra Petch',sans-serif;font-size:18pt;margin:0}
 h2{font-family:'Chakra Petch',sans-serif;font-size:11pt;margin:5px 0 2px;border-bottom:1.5px solid #111;padding-bottom:1px}
-.bandeau{display:flex;justify-content:space-between;align-items:baseline;border-bottom:3px double #111;padding-bottom:4px;margin-bottom:6px}
-.bandeau span{font-size:9.5pt}
-.champs{display:flex;gap:16px;margin:2px 0 4px}.champs span{flex:1;border-bottom:1px dotted #111;padding-top:8px}
+/* la tête, sur le modèle de fiche de la charte « Réseau la nuit » (bloc titre, bandeau des niveaux, coin coupé) */
+html{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+:root{--encre:#0B1020;--encre-2:#343E54;--encre-3:#586276;--trait-doux:#C9D0DC;--bleu:#0B5A94;--bleu-neon:#38BDF8;--violet:#5B2BB5;--violet-neon:#A78BFA;--titre:'Chakra Petch',sans-serif;--code:'JetBrains Mono',monospace}
+.tb{position:relative;border:.35mm solid var(--encre);margin-bottom:2mm}
+.tb::after,.tb-td::after{content:"";position:absolute;top:-.4mm;right:-.4mm;width:var(--c);height:var(--c);background:linear-gradient(to bottom left,#fff calc(50% - .2mm),var(--encre) calc(50% - .2mm),var(--encre) calc(50% + .2mm),transparent calc(50% + .2mm))}
+.tb{--c:4mm}.tb-td{--c:2.6mm}
+.tb-top{display:flex;justify-content:space-between;flex-wrap:wrap;gap:1mm 4mm;font:700 7.4pt var(--titre);letter-spacing:.08em;text-transform:uppercase;padding:1.2mm 6mm 1.2mm 4mm;background:var(--encre);color:#fff}
+.tb-top i{display:inline-block;width:2.2mm;height:2.2mm;margin:0 1.6mm 0 0;vertical-align:.05mm}.tb-top i.snt{background:var(--bleu-neon)}.tb-top i.nsi{background:var(--violet-neon);margin-left:3mm}
+.tb-main{display:flex;align-items:center;gap:4mm;padding:2mm 4mm 1.6mm}
+.tb-td{position:relative;display:flex;flex-direction:column;align-items:center;min-width:21mm;padding:1mm 3mm 1.2mm;border:.35mm solid var(--encre);border-bottom:0}
+.tb-td small{font:700 7pt var(--titre);letter-spacing:.14em;text-transform:uppercase;color:var(--encre-2);margin-bottom:.6mm}
+.tb-td svg{width:9mm;height:9mm;display:block}
+.tb-td .niv{position:absolute;left:-.35mm;right:-.35mm;bottom:-1.4mm;height:1.4mm;background:linear-gradient(90deg,var(--bleu) 50%,var(--violet) 50%)}
+.tb-titles{flex:1;min-width:0}
+.tb-titles h1{font:700 17pt/1.05 var(--titre);margin:0 0 1mm}
+.tb-titles p{margin:0;font-size:9pt;line-height:1.3;color:var(--encre-2)}
+.tb-champs{display:flex;gap:6mm;margin-top:1mm;font-size:8.6pt}.tb-champs span{flex:1;border-bottom:.25mm dotted var(--encre);padding-top:3mm}
+.tb-enligne{margin-top:1.2mm;font-size:8pt;color:var(--encre-2)}.tb-enligne b{font:700 7.4pt var(--code);color:var(--encre);overflow-wrap:anywhere}
+.tb-aside{display:flex;flex-direction:column;align-items:center;gap:.6mm;border-left:.25mm solid var(--trait-doux);padding-left:3.5mm}
+.tb-aside .cap{font:700 6.8pt var(--titre);letter-spacing:.06em;text-transform:uppercase;color:var(--encre-3)}
+.tb-aside .qr{width:18mm;height:18mm;display:block}
+.tb-aside small{font-size:7pt;color:var(--encre-3)}
 code,pre{font-family:'JetBrains Mono',monospace;font-size:8.4pt}
 pre{margin:2px 0;padding:3px 7px;border:1px solid #111;border-radius:4px;white-space:pre}
 table{border-collapse:collapse;width:100%;font-size:9pt}td,th{border:1px solid #111;padding:1px 4px;text-align:left;vertical-align:top}th{background:#eee}
@@ -30,23 +48,32 @@ table{border-collapse:collapse;width:100%;font-size:9pt}td,th{border:1px solid #
 .barre{position:sticky;top:0;background:#111827;color:#fff;padding:8px;display:flex;gap:10px;justify-content:center}
 .barre button,.barre a{font:inherit;padding:6px 12px;border-radius:6px;border:0;background:#22D3EE;color:#000;text-decoration:none;cursor:pointer}
 @media print{body{background:#fff}.feuille{margin:0;box-shadow:none;width:auto;min-height:0;padding:0}.barre{display:none}}
-@media screen and (max-width:820px){.feuille{width:auto;min-height:0;padding:14px}.deux{grid-template-columns:minmax(0,1fr)}pre{overflow-x:auto}}
+@media screen and (max-width:820px){.tb-main{flex-wrap:wrap}.tb-aside{border-left:0;padding-left:0;flex-direction:row;gap:3mm}.feuille{width:auto;min-height:0;padding:14px}.deux{grid-template-columns:minmax(0,1fr)}pre{overflow-x:auto}}
+@media screen and (max-width:520px){.tb-titles{flex:1 1 100%}}
 .deux > *{break-inside:avoid}
 </style>
 </head>
 <body>
 <div class="barre"><button type="button" onclick="print()">Imprimer</button><a href="index.html">Jouer</a></div>
 <main class="feuille">
-  <div class="bandeau"><span>SNT · NSI Première — Programmation : boucles et conditions</span><span>Court-circuit · mémo</span></div>
-  <h1>Court-circuit : le mémo</h1>
-  <div class="champs"><span>Prénom :</span><span>Classe :</span></div>
-  <p style="margin:2px 0">Ton robot colorie les cases où il passe ; une case adverse sur laquelle tu passes devient la tienne. Après 30 s, le plus de cases gagne. En ligne : <b>babash.github.io/Babash-NSI-SNT/snt/fichiers/court-circuit/</b></p>
+  <header class="tb">
+    <div class="tb-top"><span><i class="snt"></i>SNT · Seconde<i class="nsi"></i>NSI · Première</span><span>Programmation · constructions élémentaires</span></div>
+    <div class="tb-main">
+      <div class="tb-td"><small>Mémo</small><svg viewBox="0 0 24 24" fill="none" stroke="#0B1020" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg><span class="niv"></span></div>
+      <div class="tb-titles"><h1>Court-circuit : le mémo</h1>
+        <p>Ton robot colorie les cases où il passe ; une case adverse sur laquelle tu passes devient la tienne. Après 30 s, le plus de cases gagne.</p>
+        <div class="tb-champs"><span>Prénom :</span><span>Classe :</span></div>
+        <div class="tb-enligne">En ligne : <b>babash.github.io/Babash-NSI-SNT/snt/fichiers/court-circuit/</b></div>
+      </div>
+      <div class="tb-aside"><span class="cap">À vos smartphones !</span><svg class="qr" viewBox="-2 -2 41 41" role="img" aria-label="QR code vers https://babash.github.io/Babash-NSI-SNT/snt/fichiers/court-circuit/"><rect x="-2" y="-2" width="41" height="41" fill="#fff"/><path d="M0 0h1v1h-1zM1 0h1v1h-1zM2 0h1v1h-1zM3 0h1v1h-1zM4 0h1v1h-1zM5 0h1v1h-1zM6 0h1v1h-1zM8 0h1v1h-1zM9 0h1v1h-1zM12 0h1v1h-1zM13 0h1v1h-1zM14 0h1v1h-1zM17 0h1v1h-1zM18 0h1v1h-1zM19 0h1v1h-1zM22 0h1v1h-1zM23 0h1v1h-1zM24 0h1v1h-1zM25 0h1v1h-1zM26 0h1v1h-1zM28 0h1v1h-1zM30 0h1v1h-1zM31 0h1v1h-1zM32 0h1v1h-1zM33 0h1v1h-1zM34 0h1v1h-1zM35 0h1v1h-1zM36 0h1v1h-1zM0 1h1v1h-1zM6 1h1v1h-1zM9 1h1v1h-1zM16 1h1v1h-1zM17 1h1v1h-1zM19 1h1v1h-1zM21 1h1v1h-1zM22 1h1v1h-1zM24 1h1v1h-1zM25 1h1v1h-1zM26 1h1v1h-1zM30 1h1v1h-1zM36 1h1v1h-1zM0 2h1v1h-1zM2 2h1v1h-1zM3 2h1v1h-1zM4 2h1v1h-1zM6 2h1v1h-1zM8 2h1v1h-1zM9 2h1v1h-1zM12 2h1v1h-1zM15 2h1v1h-1zM17 2h1v1h-1zM21 2h1v1h-1zM25 2h1v1h-1zM27 2h1v1h-1zM30 2h1v1h-1zM32 2h1v1h-1zM33 2h1v1h-1zM34 2h1v1h-1zM36 2h1v1h-1zM0 3h1v1h-1zM2 3h1v1h-1zM3 3h1v1h-1zM4 3h1v1h-1zM6 3h1v1h-1zM10 3h1v1h-1zM12 3h1v1h-1zM13 3h1v1h-1zM15 3h1v1h-1zM18 3h1v1h-1zM19 3h1v1h-1zM20 3h1v1h-1zM22 3h1v1h-1zM23 3h1v1h-1zM25 3h1v1h-1zM26 3h1v1h-1zM30 3h1v1h-1zM32 3h1v1h-1zM33 3h1v1h-1zM34 3h1v1h-1zM36 3h1v1h-1zM0 4h1v1h-1zM2 4h1v1h-1zM3 4h1v1h-1zM4 4h1v1h-1zM6 4h1v1h-1zM9 4h1v1h-1zM10 4h1v1h-1zM12 4h1v1h-1zM13 4h1v1h-1zM14 4h1v1h-1zM16 4h1v1h-1zM17 4h1v1h-1zM18 4h1v1h-1zM19 4h1v1h-1zM22 4h1v1h-1zM24 4h1v1h-1zM26 4h1v1h-1zM30 4h1v1h-1zM32 4h1v1h-1zM33 4h1v1h-1zM34 4h1v1h-1zM36 4h1v1h-1zM0 5h1v1h-1zM6 5h1v1h-1zM8 5h1v1h-1zM13 5h1v1h-1zM14 5h1v1h-1zM15 5h1v1h-1zM21 5h1v1h-1zM22 5h1v1h-1zM24 5h1v1h-1zM26 5h1v1h-1zM30 5h1v1h-1zM36 5h1v1h-1zM0 6h1v1h-1zM1 6h1v1h-1zM2 6h1v1h-1zM3 6h1v1h-1zM4 6h1v1h-1zM5 6h1v1h-1zM6 6h1v1h-1zM8 6h1v1h-1zM10 6h1v1h-1zM12 6h1v1h-1zM14 6h1v1h-1zM16 6h1v1h-1zM18 6h1v1h-1zM20 6h1v1h-1zM22 6h1v1h-1zM24 6h1v1h-1zM26 6h1v1h-1zM28 6h1v1h-1zM30 6h1v1h-1zM31 6h1v1h-1zM32 6h1v1h-1zM33 6h1v1h-1zM34 6h1v1h-1zM35 6h1v1h-1zM36 6h1v1h-1zM9 7h1v1h-1zM10 7h1v1h-1zM12 7h1v1h-1zM13 7h1v1h-1zM14 7h1v1h-1zM16 7h1v1h-1zM18 7h1v1h-1zM19 7h1v1h-1zM20 7h1v1h-1zM21 7h1v1h-1zM23 7h1v1h-1zM24 7h1v1h-1zM26 7h1v1h-1zM27 7h1v1h-1zM28 7h1v1h-1zM0 8h1v1h-1zM2 8h1v1h-1zM6 8h1v1h-1zM7 8h1v1h-1zM9 8h1v1h-1zM11 8h1v1h-1zM12 8h1v1h-1zM13 8h1v1h-1zM14 8h1v1h-1zM16 8h1v1h-1zM17 8h1v1h-1zM18 8h1v1h-1zM21 8h1v1h-1zM24 8h1v1h-1zM31 8h1v1h-1zM34 8h1v1h-1zM36 8h1v1h-1zM1 9h1v1h-1zM3 9h1v1h-1zM5 9h1v1h-1zM7 9h1v1h-1zM10 9h1v1h-1zM11 9h1v1h-1zM13 9h1v1h-1zM16 9h1v1h-1zM17 9h1v1h-1zM18 9h1v1h-1zM23 9h1v1h-1zM25 9h1v1h-1zM27 9h1v1h-1zM28 9h1v1h-1zM29 9h1v1h-1zM30 9h1v1h-1zM31 9h1v1h-1zM33 9h1v1h-1zM35 9h1v1h-1zM36 9h1v1h-1zM0 10h1v1h-1zM1 10h1v1h-1zM2 10h1v1h-1zM4 10h1v1h-1zM5 10h1v1h-1zM6 10h1v1h-1zM7 10h1v1h-1zM8 10h1v1h-1zM9 10h1v1h-1zM11 10h1v1h-1zM12 10h1v1h-1zM13 10h1v1h-1zM14 10h1v1h-1zM16 10h1v1h-1zM17 10h1v1h-1zM18 10h1v1h-1zM19 10h1v1h-1zM22 10h1v1h-1zM23 10h1v1h-1zM24 10h1v1h-1zM25 10h1v1h-1zM26 10h1v1h-1zM27 10h1v1h-1zM28 10h1v1h-1zM29 10h1v1h-1zM30 10h1v1h-1zM31 10h1v1h-1zM33 10h1v1h-1zM36 10h1v1h-1zM0 11h1v1h-1zM12 11h1v1h-1zM14 11h1v1h-1zM15 11h1v1h-1zM16 11h1v1h-1zM18 11h1v1h-1zM24 11h1v1h-1zM26 11h1v1h-1zM27 11h1v1h-1zM30 11h1v1h-1zM33 11h1v1h-1zM4 12h1v1h-1zM5 12h1v1h-1zM6 12h1v1h-1zM9 12h1v1h-1zM11 12h1v1h-1zM12 12h1v1h-1zM13 12h1v1h-1zM16 12h1v1h-1zM18 12h1v1h-1zM19 12h1v1h-1zM20 12h1v1h-1zM23 12h1v1h-1zM24 12h1v1h-1zM27 12h1v1h-1zM28 12h1v1h-1zM30 12h1v1h-1zM31 12h1v1h-1zM33 12h1v1h-1zM36 12h1v1h-1zM0 13h1v1h-1zM4 13h1v1h-1zM5 13h1v1h-1zM7 13h1v1h-1zM11 13h1v1h-1zM12 13h1v1h-1zM13 13h1v1h-1zM14 13h1v1h-1zM15 13h1v1h-1zM16 13h1v1h-1zM17 13h1v1h-1zM20 13h1v1h-1zM23 13h1v1h-1zM24 13h1v1h-1zM26 13h1v1h-1zM27 13h1v1h-1zM30 13h1v1h-1zM31 13h1v1h-1zM33 13h1v1h-1zM36 13h1v1h-1zM1 14h1v1h-1zM3 14h1v1h-1zM5 14h1v1h-1zM6 14h1v1h-1zM7 14h1v1h-1zM8 14h1v1h-1zM10 14h1v1h-1zM13 14h1v1h-1zM15 14h1v1h-1zM19 14h1v1h-1zM21 14h1v1h-1zM22 14h1v1h-1zM23 14h1v1h-1zM26 14h1v1h-1zM27 14h1v1h-1zM28 14h1v1h-1zM29 14h1v1h-1zM30 14h1v1h-1zM33 14h1v1h-1zM34 14h1v1h-1zM36 14h1v1h-1zM2 15h1v1h-1zM3 15h1v1h-1zM4 15h1v1h-1zM5 15h1v1h-1zM8 15h1v1h-1zM13 15h1v1h-1zM15 15h1v1h-1zM17 15h1v1h-1zM20 15h1v1h-1zM22 15h1v1h-1zM26 15h1v1h-1zM29 15h1v1h-1zM30 15h1v1h-1zM31 15h1v1h-1zM32 15h1v1h-1zM33 15h1v1h-1zM35 15h1v1h-1zM36 15h1v1h-1zM0 16h1v1h-1zM1 16h1v1h-1zM2 16h1v1h-1zM3 16h1v1h-1zM5 16h1v1h-1zM6 16h1v1h-1zM8 16h1v1h-1zM10 16h1v1h-1zM13 16h1v1h-1zM14 16h1v1h-1zM15 16h1v1h-1zM17 16h1v1h-1zM20 16h1v1h-1zM21 16h1v1h-1zM22 16h1v1h-1zM29 16h1v1h-1zM30 16h1v1h-1zM0 17h1v1h-1zM1 17h1v1h-1zM7 17h1v1h-1zM8 17h1v1h-1zM9 17h1v1h-1zM10 17h1v1h-1zM11 17h1v1h-1zM12 17h1v1h-1zM14 17h1v1h-1zM17 17h1v1h-1zM20 17h1v1h-1zM22 17h1v1h-1zM23 17h1v1h-1zM24 17h1v1h-1zM27 17h1v1h-1zM28 17h1v1h-1zM30 17h1v1h-1zM31 17h1v1h-1zM34 17h1v1h-1zM35 17h1v1h-1zM36 17h1v1h-1zM5 18h1v1h-1zM6 18h1v1h-1zM7 18h1v1h-1zM8 18h1v1h-1zM9 18h1v1h-1zM10 18h1v1h-1zM11 18h1v1h-1zM15 18h1v1h-1zM17 18h1v1h-1zM20 18h1v1h-1zM21 18h1v1h-1zM22 18h1v1h-1zM23 18h1v1h-1zM25 18h1v1h-1zM27 18h1v1h-1zM29 18h1v1h-1zM30 18h1v1h-1zM32 18h1v1h-1zM34 18h1v1h-1zM36 18h1v1h-1zM2 19h1v1h-1zM3 19h1v1h-1zM4 19h1v1h-1zM8 19h1v1h-1zM9 19h1v1h-1zM11 19h1v1h-1zM13 19h1v1h-1zM18 19h1v1h-1zM19 19h1v1h-1zM20 19h1v1h-1zM22 19h1v1h-1zM28 19h1v1h-1zM29 19h1v1h-1zM31 19h1v1h-1zM33 19h1v1h-1zM1 20h1v1h-1zM2 20h1v1h-1zM3 20h1v1h-1zM4 20h1v1h-1zM6 20h1v1h-1zM9 20h1v1h-1zM14 20h1v1h-1zM15 20h1v1h-1zM17 20h1v1h-1zM20 20h1v1h-1zM24 20h1v1h-1zM27 20h1v1h-1zM28 20h1v1h-1zM30 20h1v1h-1zM31 20h1v1h-1zM33 20h1v1h-1zM35 20h1v1h-1zM0 21h1v1h-1zM3 21h1v1h-1zM4 21h1v1h-1zM10 21h1v1h-1zM11 21h1v1h-1zM12 21h1v1h-1zM13 21h1v1h-1zM15 21h1v1h-1zM16 21h1v1h-1zM18 21h1v1h-1zM19 21h1v1h-1zM21 21h1v1h-1zM23 21h1v1h-1zM24 21h1v1h-1zM25 21h1v1h-1zM27 21h1v1h-1zM28 21h1v1h-1zM30 21h1v1h-1zM36 21h1v1h-1zM2 22h1v1h-1zM3 22h1v1h-1zM4 22h1v1h-1zM6 22h1v1h-1zM7 22h1v1h-1zM8 22h1v1h-1zM12 22h1v1h-1zM15 22h1v1h-1zM17 22h1v1h-1zM18 22h1v1h-1zM19 22h1v1h-1zM20 22h1v1h-1zM23 22h1v1h-1zM24 22h1v1h-1zM25 22h1v1h-1zM26 22h1v1h-1zM27 22h1v1h-1zM33 22h1v1h-1zM34 22h1v1h-1zM35 22h1v1h-1zM36 22h1v1h-1zM1 23h1v1h-1zM2 23h1v1h-1zM4 23h1v1h-1zM5 23h1v1h-1zM7 23h1v1h-1zM9 23h1v1h-1zM15 23h1v1h-1zM16 23h1v1h-1zM18 23h1v1h-1zM21 23h1v1h-1zM23 23h1v1h-1zM24 23h1v1h-1zM26 23h1v1h-1zM27 23h1v1h-1zM29 23h1v1h-1zM30 23h1v1h-1zM31 23h1v1h-1zM32 23h1v1h-1zM33 23h1v1h-1zM2 24h1v1h-1zM3 24h1v1h-1zM5 24h1v1h-1zM6 24h1v1h-1zM7 24h1v1h-1zM10 24h1v1h-1zM13 24h1v1h-1zM14 24h1v1h-1zM16 24h1v1h-1zM17 24h1v1h-1zM18 24h1v1h-1zM21 24h1v1h-1zM24 24h1v1h-1zM27 24h1v1h-1zM30 24h1v1h-1zM31 24h1v1h-1zM36 24h1v1h-1zM1 25h1v1h-1zM2 25h1v1h-1zM3 25h1v1h-1zM5 25h1v1h-1zM8 25h1v1h-1zM9 25h1v1h-1zM11 25h1v1h-1zM12 25h1v1h-1zM13 25h1v1h-1zM14 25h1v1h-1zM16 25h1v1h-1zM18 25h1v1h-1zM23 25h1v1h-1zM24 25h1v1h-1zM25 25h1v1h-1zM26 25h1v1h-1zM27 25h1v1h-1zM28 25h1v1h-1zM30 25h1v1h-1zM31 25h1v1h-1zM36 25h1v1h-1zM0 26h1v1h-1zM1 26h1v1h-1zM2 26h1v1h-1zM3 26h1v1h-1zM6 26h1v1h-1zM9 26h1v1h-1zM10 26h1v1h-1zM16 26h1v1h-1zM18 26h1v1h-1zM19 26h1v1h-1zM22 26h1v1h-1zM23 26h1v1h-1zM25 26h1v1h-1zM26 26h1v1h-1zM27 26h1v1h-1zM29 26h1v1h-1zM30 26h1v1h-1zM32 26h1v1h-1zM36 26h1v1h-1zM3 27h1v1h-1zM4 27h1v1h-1zM7 27h1v1h-1zM10 27h1v1h-1zM12 27h1v1h-1zM13 27h1v1h-1zM15 27h1v1h-1zM16 27h1v1h-1zM18 27h1v1h-1zM24 27h1v1h-1zM27 27h1v1h-1zM28 27h1v1h-1zM30 27h1v1h-1zM32 27h1v1h-1zM33 27h1v1h-1zM35 27h1v1h-1zM36 27h1v1h-1zM0 28h1v1h-1zM1 28h1v1h-1zM3 28h1v1h-1zM5 28h1v1h-1zM6 28h1v1h-1zM8 28h1v1h-1zM9 28h1v1h-1zM10 28h1v1h-1zM12 28h1v1h-1zM13 28h1v1h-1zM14 28h1v1h-1zM16 28h1v1h-1zM17 28h1v1h-1zM19 28h1v1h-1zM20 28h1v1h-1zM23 28h1v1h-1zM24 28h1v1h-1zM28 28h1v1h-1zM29 28h1v1h-1zM30 28h1v1h-1zM31 28h1v1h-1zM32 28h1v1h-1zM33 28h1v1h-1zM35 28h1v1h-1zM36 28h1v1h-1zM8 29h1v1h-1zM9 29h1v1h-1zM15 29h1v1h-1zM17 29h1v1h-1zM19 29h1v1h-1zM20 29h1v1h-1zM23 29h1v1h-1zM26 29h1v1h-1zM27 29h1v1h-1zM28 29h1v1h-1zM32 29h1v1h-1zM35 29h1v1h-1zM36 29h1v1h-1zM0 30h1v1h-1zM1 30h1v1h-1zM2 30h1v1h-1zM3 30h1v1h-1zM4 30h1v1h-1zM5 30h1v1h-1zM6 30h1v1h-1zM8 30h1v1h-1zM10 30h1v1h-1zM11 30h1v1h-1zM13 30h1v1h-1zM15 30h1v1h-1zM16 30h1v1h-1zM19 30h1v1h-1zM21 30h1v1h-1zM22 30h1v1h-1zM23 30h1v1h-1zM24 30h1v1h-1zM26 30h1v1h-1zM28 30h1v1h-1zM30 30h1v1h-1zM32 30h1v1h-1zM36 30h1v1h-1zM0 31h1v1h-1zM6 31h1v1h-1zM9 31h1v1h-1zM10 31h1v1h-1zM13 31h1v1h-1zM16 31h1v1h-1zM17 31h1v1h-1zM19 31h1v1h-1zM22 31h1v1h-1zM23 31h1v1h-1zM27 31h1v1h-1zM28 31h1v1h-1zM32 31h1v1h-1zM36 31h1v1h-1zM0 32h1v1h-1zM2 32h1v1h-1zM3 32h1v1h-1zM4 32h1v1h-1zM6 32h1v1h-1zM10 32h1v1h-1zM12 32h1v1h-1zM13 32h1v1h-1zM15 32h1v1h-1zM17 32h1v1h-1zM19 32h1v1h-1zM20 32h1v1h-1zM21 32h1v1h-1zM22 32h1v1h-1zM23 32h1v1h-1zM27 32h1v1h-1zM28 32h1v1h-1zM29 32h1v1h-1zM30 32h1v1h-1zM31 32h1v1h-1zM32 32h1v1h-1zM0 33h1v1h-1zM2 33h1v1h-1zM3 33h1v1h-1zM4 33h1v1h-1zM6 33h1v1h-1zM9 33h1v1h-1zM11 33h1v1h-1zM17 33h1v1h-1zM20 33h1v1h-1zM22 33h1v1h-1zM23 33h1v1h-1zM24 33h1v1h-1zM27 33h1v1h-1zM29 33h1v1h-1zM32 33h1v1h-1zM34 33h1v1h-1zM0 34h1v1h-1zM2 34h1v1h-1zM3 34h1v1h-1zM4 34h1v1h-1zM6 34h1v1h-1zM8 34h1v1h-1zM11 34h1v1h-1zM14 34h1v1h-1zM15 34h1v1h-1zM20 34h1v1h-1zM21 34h1v1h-1zM22 34h1v1h-1zM23 34h1v1h-1zM25 34h1v1h-1zM27 34h1v1h-1zM28 34h1v1h-1zM29 34h1v1h-1zM31 34h1v1h-1zM32 34h1v1h-1zM33 34h1v1h-1zM34 34h1v1h-1zM36 34h1v1h-1zM0 35h1v1h-1zM6 35h1v1h-1zM9 35h1v1h-1zM11 35h1v1h-1zM12 35h1v1h-1zM14 35h1v1h-1zM19 35h1v1h-1zM20 35h1v1h-1zM22 35h1v1h-1zM23 35h1v1h-1zM26 35h1v1h-1zM28 35h1v1h-1zM32 35h1v1h-1zM33 35h1v1h-1zM0 36h1v1h-1zM1 36h1v1h-1zM2 36h1v1h-1zM3 36h1v1h-1zM4 36h1v1h-1zM5 36h1v1h-1zM6 36h1v1h-1zM8 36h1v1h-1zM9 36h1v1h-1zM14 36h1v1h-1zM15 36h1v1h-1zM17 36h1v1h-1zM23 36h1v1h-1zM24 36h1v1h-1zM28 36h1v1h-1zM31 36h1v1h-1zM33 36h1v1h-1zM36 36h1v1h-1z" fill="#0B1020"/></svg><small>Jouer</small></div>
+    </div>
+  </header>
   <div class="deux">
     <div>
       <h2>Les actions (une à la fois)</h2>
       <table><tr><td><code>nord()</code> <code>sud()</code><br><code>est()</code> <code>ouest()</code></td><td>avance d’une case dans cette direction et la colorie ; le nord est en haut de ton écran</td></tr><tr><td><code>eclair()</code></td><td>éclair dans les 4 directions, sur 3 cases : l’adversaire touché est figé 2 s et les cases autour de lui deviennent les tiennes</td></tr><tr><td><code>poserCaisse()</code></td><td>pose une caisse sur ta case (3 par match) : quand tu en sors, plus personne n’y passe</td></tr><tr><td><code>attendre()</code></td><td>ne fait rien</td></tr></table>
       <h2>Les capteurs (des questions)</h2>
-      <table><tr><td><code>obstacleNord()</code></td><td>Vrai si la case au nord est un mur, une caisse, le bord ou l’autre robot ; aussi <code>obstacleSud()</code>, <code>obstacleEst()</code>, <code>obstacleOuest()</code></td></tr><tr><td><code>couleurNord()</code></td><td><code>"vide"</code>, <code>"moi"</code>, <code>"adversaire"</code> ou <code>"mur"</code> ; aussi <code>couleurSud()</code>…</td></tr><tr><td><code>cible()</code></td><td>Vrai si un éclair toucherait l’adversaire</td></tr><tr><td><code>distance()</code> <code>caisses()</code></td><td>les cases jusqu’à l’adversaire ; les caisses qu’il te reste</td></tr></table>
+      <table><tr><td><code>obstacleNord()</code></td><td>Vrai si la case au nord est un mur, une caisse, le bord ou l’autre robot ; aussi <code>obstacleSud()</code>, <code>obstacleEst()</code>, <code>obstacleOuest()</code></td></tr><tr><td><code>couleurNord()</code></td><td><code>"vide"</code>, <code>"moi"</code>, <code>"adversaire"</code> ou <code>"mur"</code> ; aussi <code>couleurSud()</code>…</td></tr><tr><td><code>cible()</code></td><td>Vrai si un éclair toucherait l’adversaire ; dans une seule direction : <code>cibleNord()</code>, <code>cibleEst()</code>…</td></tr><tr><td><code>distance()</code> <code>caisses()</code></td><td>les cases jusqu’à l’adversaire ; les caisses qu’il te reste</td></tr></table>
     </div>
     <div>
       <h2>L’essentiel</h2>
@@ -54,9 +81,12 @@ table{border-collapse:collapse;width:100%;font-size:9pt}td,th{border:1px solid #
     nord()</pre><b>Boucle non bornée</b> : répéter tant qu’une condition est vraie.<pre>while True:
     while not obstacleNord():
         nord()
-    est()</pre></div>
-      <div class="attention"><b>Attention</b> : une ligne qui commence par <code>for</code>, <code>while</code>, <code>if</code>, <code>elif</code> ou <code>else</code> finit par « : », et les lignes de son bloc sont décalées de 4 espaces.</div>
-      <p style="margin:3px 0"><b>Vitesse</b> : chaque ligne recopiée ralentit ton robot. Une boucle évite de recopier.</p>
+    est()</pre><b>Fonction</b> : donner un nom à des lignes, puis l’appeler.<pre>def zigzag():
+    nord()
+    est()
+zigzag()        # fait nord(), puis est()</pre></div>
+      <div class="attention"><b>Attention</b> : une ligne qui commence par <code>for</code>, <code>while</code>, <code>if</code>, <code>elif</code>, <code>else</code> ou <code>def</code> finit par « : », et les lignes de son bloc sont décalées de 4 espaces.</div>
+      <p style="margin:3px 0"><b>Vitesse</b> : chaque ligne recopiée ralentit ton robot. Une boucle ou une fonction évite de recopier.</p>
     </div>
   </div>
   <h2>Exercice 1 — Lire un code</h2>
@@ -77,7 +107,7 @@ for i in range(2):
   </div>
   <h2>Exercice 2 — Recopier ou répéter ?</h2>
   <p style="margin:2px 0">Écrire avec une boucle <code>for</code> un code qui fait la même chose que : <code>nord()</code> <code>nord()</code> <code>nord()</code> <code>est()</code> <code>nord()</code> <code>nord()</code> <code>nord()</code> <code>est()</code>.</p>
-  <div style="height:12mm;border:1px dashed #111;border-radius:4px"></div>
+  <div style="height:10mm;border:1px dashed #111;border-radius:4px"></div>
   <div class="deux">
     <div>
   <h2>Exercice 3 — Choisir sa condition</h2>
@@ -94,6 +124,7 @@ for i in range(2):
   <span class="coche">poser une question au robot avec un capteur, comme <code>obstacleNord()</code> ;</span>
   <span class="coche">utiliser <code>while</code> pour répéter tant qu’une condition est vraie ;</span>
   <span class="coche">écrire <code>if</code> / <code>elif</code> / <code>else</code> avec les deux-points et le décalage ;</span>
+  <span class="coche">définir une fonction avec <code>def</code> et l’appeler par son nom ;</span>
   <span class="coche">combiner deux conditions avec <code>and</code>, <code>or</code> ou <code>not</code>, et comparer avec <code>==</code>, <code>!=</code>, <code>&lt;=</code>.</span>
     </div>
   </div>
