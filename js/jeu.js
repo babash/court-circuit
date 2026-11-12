@@ -17,7 +17,7 @@ let ED, PL;
 function dire(txt, cls = '', ms = 0) { const m = $('message'); m.textContent = txt; m.className = 'message ' + cls; dire.jusqua = ms ? performance.now() + ms : 0; }
 function conseil(cle, txt) { const now = performance.now(); if (dire.jusqua && now < dire.jusqua) return; if (conseil.vus[cle] && now - conseil.vus[cle] < 7000) return; conseil.vus[cle] = now; dire(txt, 'aide', 3500); }
 conseil.vus = {};
-const FONCTIONS_RE = /\b(nord|sud|est|ouest|eclair|poserCaisse|attendre|obstacle(?:Nord|Sud|Est|Ouest)|couleur(?:Nord|Sud|Est|Ouest)|cible|distance|caisses)\b(?=\()/g;
+const FONCTIONS_RE = /\b(nord|sud|est|ouest|eclair|poserCaisse|attendre|obstacle(?:Nord|Sud|Est|Ouest)|couleur(?:Nord|Sud|Est|Ouest)|cible(?:Nord|Sud|Est|Ouest)?|distance|caisses)\b(?=\()/g;
 function colorer(code, { courante = 0, prendre = false } = {}) {
   return code.split('\n').map((l, i) => {
     let h = esc(l).replace(/(#.*)$/, '<span class="c-com">$1</span>')
@@ -190,7 +190,7 @@ function conseilFin(code) {
   if (countRep(code)) return 'Tu as recopié des lignes : avec une boucle for, ton robot irait plus vite.';
   if (!/obstacle/.test(code)) return 'Ton robot ne regarde pas avant d’avancer. while not obstacleNord(): nord() le fait aller jusqu’au mur sans le cogner.';
   if (!/couleur/.test(code)) return 'couleurEst() != "moi" fait choisir à ton robot des cases qui ne sont pas déjà à lui. Voler une case adverse compte double.';
-  if (!/cible/.test(code)) return 'if cible(): eclair() électrise l’adversaire dans ta ligne ou ta colonne : il est figé et les cases autour deviennent les tiennes.';
+  if (!/cible/.test(code)) return 'if cible(): eclair() électrise l’adversaire dans ta ligne ou ta colonne : le robot adverse est figé et les cases autour deviennent les tiennes.';
   if (!/\band\b|\bor\b|\bnot\b/.test(code)) return 'Combine tes tests avec and : not obstacleEst() and couleurEst() != "moi".';
   if (!/poserCaisse/.test(code)) return 'poserCaisse() bloque une case derrière toi : de quoi fermer un couloir à ton adversaire.';
   return 'Ton code utilise tout ! Essaie distance() <= 3, ou change l’ordre de tes tests.';
@@ -305,6 +305,8 @@ function recevoir(msg) {
     $('consigne').innerHTML = `<b>${ronde} · ${esc(msg.nomCarte || '')}</b> contre <b>${esc(S.advNom)}</b>${esc(eloAdv)}. ${esc(msg.idee || '')} Tu es en bas, en cyan : le nord est en haut de ton écran.`;
     adversaire('', S.advNom, 0, adv ? 'caché pendant l’écriture' : 'niveau 3');
     if (!adv) adversaire(ZERO[2].code, 'Zéro', 0, 'pas d’adversaire cette ronde : tu affrontes Zéro (sans effet sur ton Elo)');
+    // l'heure de fin de l'écriture de la ronde, la même pour les deux élèves d'un duel
+    S.finEcritureA = performance.now() + (msg.ecriture || 60) * 1000;
     ecriture(msg.ecriture || 60, () => finEcritureSalle());
     for (const e of (S.pendants[p.m] || [])) recevoir(e); S.pendants = {};
   }
@@ -342,7 +344,11 @@ function finEcritureSalle() {
   S.journal = [{ seq: 0, tick: 0, code: S.monCode0 }]; diffuserJournal();
   if (!S.advId) { S.advCode0 = ZERO[2].code; return commencerDuelSalle(); }
   dire('Code envoyé. En attente du code de ' + S.advNom + '…');
-  clearTimeout(S.attenteTimer); S.attenteTimer = setTimeout(() => { if (S.etat === 'attente') { S.advCode0 = ZERO[2].code; S.advNom = 'Zéro'; S.advId = null; dire('Ton adversaire ne répond pas : tu affrontes Zéro.', 'aide', 4000); commencerDuelSalle(); } }, 12000);
+  // on attend l'adversaire jusqu'à la fin de SON temps d'écriture (la même que la tienne), plus 20 s,
+  // comme la salle, qui annule un duel sans code 20 s après la fin de l'écriture : un·e élève prêt·e
+  // en avance ne passe donc jamais contre Zéro pendant que son adversaire écrit encore.
+  const reste = Math.max(0, (S.finEcritureA || performance.now()) - performance.now());
+  clearTimeout(S.attenteTimer); S.attenteTimer = setTimeout(() => { if (S.etat === 'attente') { S.advCode0 = ZERO[2].code; S.advNom = 'Zéro'; S.advId = null; dire('Ton adversaire ne répond pas : ce duel est annulé, tu affrontes Zéro pour t’entraîner (sans effet sur ton Elo).', 'aide', 5000); commencerDuelSalle(); } }, reste + 20000);
   if (S.advCode0 != null) commencerDuelSalle();
 }
 function commencerDuelSalle() {
@@ -485,13 +491,14 @@ function memo() {
 const OUTILS = {
   Actions: [['nord()', 1], ['sud()', 1], ['est()', 1], ['ouest()', 1], ['eclair()', 1], ['poserCaisse()', 1], ['attendre()', 1]],
   Boucles: [['for i in range(3):\n    nord()', 1, 'for'], ['while True:\n    nord()', 1, 'while True'], ['while not obstacleNord():\n    nord()', 1, 'while not obstacleNord()']],
-  Conditions: [['if obstacleNord():\n    est()\nelse:\n    nord()', 1, 'if … else'], ['elif obstacleEst():\n    ouest()', 1, 'elif'], ['obstacleNord()', 0], ['obstacleEst()', 0], ['obstacleSud()', 0], ['obstacleOuest()', 0], ['couleurNord() != "moi"', 0], ['couleurEst() == "vide"', 0], ['cible()', 0], ['distance()', 0], ['caisses()', 0]],
+  Conditions: [['if obstacleNord():\n    est()\nelse:\n    nord()', 1, 'if … else'], ['elif obstacleEst():\n    ouest()', 1, 'elif'], ['obstacleNord()', 0], ['obstacleEst()', 0], ['obstacleSud()', 0], ['obstacleOuest()', 0], ['couleurNord() != "moi"', 0], ['couleurEst() == "vide"', 0], ['cible()', 0], ['cibleEst()', 0], ['distance()', 0], ['caisses()', 0]],
+  Fonctions: [['def zigzag():\n    nord()\n    est()', 1, 'def zigzag()'], ['def avancer(n):\n    for i in range(n):\n        nord()', 1, 'def avancer(n)'], ['def libreNord():\n    return not obstacleNord() and couleurNord() != "moi"', 1, 'def … return'], ['zigzag()', 1], ['avancer(3)', 1]],
   Opérateurs: [[' and ', 0, 'and'], [' or ', 0, 'or'], ['not ', 0, 'not'], [' == ', 0, '=='], [' != ', 0, '!='], [' <= ', 0, '<='], [' < ', 0, '<'], [' > ', 0, '>']],
 };
 let ongletOutil = 'Actions';
 function outils() {
   $('onglets').innerHTML = Object.keys(OUTILS).map(k => `<button class="onglet" role="tab" aria-selected="${k === ongletOutil}" data-o="${k}">${k}</button>`).join('') + (matchMedia('(pointer:coarse)').matches ? '<button class="onglet" data-d="1" aria-label="Décaler la ligne vers la droite">⇥</button><button class="onglet" data-d="-1" aria-label="Décaler la ligne vers la gauche">⇤</button>' : '');
-  $('mots').innerHTML = OUTILS[ongletOutil].map(([t, bloc, lab], i) => `<button class="mot${/^(for|while|if|elif)/.test(t) ? ' kw' : /^ ?(and|or|not|==|!=|<|>)/.test(t) ? ' op' : ''}" data-i="${i}" title="${esc(t)}">${esc(lab || t.trim())}</button>`).join('');
+  $('mots').innerHTML = OUTILS[ongletOutil].map(([t, bloc, lab], i) => `<button class="mot${/^(for|while|if|elif|def|return)/.test(t) ? ' kw' : /^ ?(and|or|not|==|!=|<|>)/.test(t) ? ' op' : ''}" data-i="${i}" title="${esc(t)}">${esc(lab || t.trim())}</button>`).join('');
 }
 function init() {
   PL = creerPlateau($('plateau'));

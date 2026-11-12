@@ -42,7 +42,24 @@ while True:                                          # répéter sans fin (boucl
         sud()
 ```
 
-Les mots sont ceux des TD : `nord()`, `sud()`, `est()`, `ouest()` pour avancer d'une case, `obstacleNord()`… pour savoir s'il y a un obstacle, et sur le même modèle `couleurNord()`… pour connaître la couleur d'une case voisine. Le nord est toujours en haut de l'écran de l'élève. S'y ajoutent `eclair()`, `cible()`, `distance()` et **3 caisses par match** : `poserCaisse()` bloque la case où est le robot dès qu'il en sort.
+Les mots sont ceux des TD : `nord()`, `sud()`, `est()`, `ouest()` pour avancer d'une case, `obstacleNord()`… pour savoir s'il y a un obstacle, et sur le même modèle `couleurNord()`… pour connaître la couleur d'une case voisine. Le nord est toujours en haut de l'écran de l'élève. S'y ajoutent `eclair()`, `cible()` (l'éclair toucherait l'adversaire) et, pour une seule direction, `cibleNord()`, `cibleSud()`, `cibleEst()`, `cibleOuest()`, puis `distance()` et **3 caisses par match** : `poserCaisse()` bloque la case où est le robot dès qu'il en sort.
+
+**Pour aller plus loin, ses propres fonctions** : `def`, avec ou sans paramètres, et `return`, comme en Python (variables locales, `global`, erreurs de Python expliquées en français).
+
+```python
+def prendre():                                       # une fonction qui renvoie Vrai ou Faux
+    return couleurNord() != "moi" and not obstacleNord()
+
+def glisser(n):                                      # une fonction avec un paramètre
+    for i in range(n):
+        est()
+
+while True:
+    if prendre():
+        nord()
+    else:
+        glisser(2)
+```
 
 Le code de départ est `for i in range(8): nord()` : il marche tout de suite, mais le robot s'arrête quand le code est fini. **Chaque ligne recopiée ralentit le robot** : avec une boucle `for` de 3 tours, il va plus vite qu'avec 3 lignes recopiées.
 
@@ -63,6 +80,7 @@ Le code de départ est `for i in range(8): nord()` : il marche tout de suite, ma
 - **Les meilleurs codes gagnent** : en simulation, sur 500 cartes tirées au hasard pour chaque niveau, Zéro 1 est battu 90 à 95 fois sur 100 par un simple `for` ; Zéro 2, 93 à 97 fois sur 100 par `while` et des boucles ; Zéro 3 et Zéro 4, 80 à 97 fois sur 100 par un code qui regarde les couleurs pour aller vers les cases à prendre (`couleurNord() != "moi"`…). Un code qui ne regarde que les obstacles bat Zéro 3 moins d’une fois sur deux : c’est la marche à franchir. Voler une case adverse compte double.
 - **Les cartes changent à chaque ronde** : un trajet appris par cœur ne suffit plus, il faut regarder avant d'avancer.
 - **L'éditeur des programmeur·se·s** : coloration, indentation automatique et touche Tab, guides des blocs, autocomplétion qui comprend aussi le français (« si », « tant que », « sinon », « droite » pour `est()`), erreurs affichées comme en Python (« Did you mean: 'obstacleNord'? ») puis expliquées en français.
+- **Les fonctions pour éviter de recopier** : un groupe de lignes qui revient porte un nom (`def zigzag():`) et s'appelle d'une ligne ; comme une boucle, il évite les lignes recopiées, qui ralentissent le robot.
 - **Apprendre des autres** : le code de l'adversaire est visible pendant le duel, on peut en emprunter une ligne après chaque duel, et **tout son code à la fin de la séance**.
 - **Des retours de processus** : des conseils pendant le match (« ton robot repasse sur ses cases : regarde `couleurNord()` ») et à la fin.
 
