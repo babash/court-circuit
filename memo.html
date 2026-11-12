@@ -8,18 +8,18 @@
 <style>
 @page{size:A4;margin:12mm}
 *{box-sizing:border-box;font-variant-ligatures:none}
-body{margin:0;background:#E5E7EB;color:#111;font-family:'Atkinson Hyperlegible',system-ui,sans-serif;font-size:10pt;line-height:1.3}
+body{margin:0;background:#E5E7EB;color:#111;font-family:'Atkinson Hyperlegible',system-ui,sans-serif;font-size:9.4pt;line-height:1.25}
 .feuille{width:210mm;min-height:297mm;margin:10px auto;background:#fff;padding:12mm 13mm;box-shadow:0 2px 12px rgba(0,0,0,.25)}
-h1{font-family:'Chakra Petch',sans-serif;font-size:20pt;margin:0}
-h2{font-family:'Chakra Petch',sans-serif;font-size:12pt;margin:6px 0 3px;border-bottom:1.5px solid #111;padding-bottom:1px}
+h1{font-family:'Chakra Petch',sans-serif;font-size:18pt;margin:0}
+h2{font-family:'Chakra Petch',sans-serif;font-size:11pt;margin:5px 0 2px;border-bottom:1.5px solid #111;padding-bottom:1px}
 .bandeau{display:flex;justify-content:space-between;align-items:baseline;border-bottom:3px double #111;padding-bottom:4px;margin-bottom:6px}
 .bandeau span{font-size:9.5pt}
-.champs{display:flex;gap:16px;margin:4px 0 6px}.champs span{flex:1;border-bottom:1px dotted #111;padding-top:10px}
-code,pre{font-family:'JetBrains Mono',monospace;font-size:9pt}
-pre{margin:3px 0;padding:4px 7px;border:1px solid #111;border-radius:4px;white-space:pre}
-table{border-collapse:collapse;width:100%;font-size:9.5pt}td,th{border:1px solid #111;padding:2px 5px;text-align:left;vertical-align:top}th{background:#eee}
+.champs{display:flex;gap:16px;margin:2px 0 4px}.champs span{flex:1;border-bottom:1px dotted #111;padding-top:8px}
+code,pre{font-family:'JetBrains Mono',monospace;font-size:8.4pt}
+pre{margin:2px 0;padding:3px 7px;border:1px solid #111;border-radius:4px;white-space:pre}
+table{border-collapse:collapse;width:100%;font-size:9pt}td,th{border:1px solid #111;padding:1px 4px;text-align:left;vertical-align:top}th{background:#eee}
 .deux{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.grille{align-self:start;display:grid;grid-template-columns:repeat(9,6.2mm);grid-auto-rows:6.2mm;border:1.5px solid #111;width:max-content}
+.grille{align-self:start;display:grid;grid-template-columns:repeat(9,5.4mm);grid-auto-rows:5.4mm;border:1.5px solid #111;width:max-content}
 .grille i{border:.5px solid #888;display:flex;align-items:center;justify-content:center;font-style:normal;font-size:8pt;font-weight:700}
 .grille i.m{background:repeating-linear-gradient(45deg,#111 0 1.5px,#fff 1.5px 4px)}
 .essentiel{border:1px solid #111;border-top:3px solid #111;padding:4px 8px;margin:5px 0}
@@ -44,30 +44,28 @@ table{border-collapse:collapse;width:100%;font-size:9.5pt}td,th{border:1px solid
   <div class="deux">
     <div>
       <h2>Les actions (une à la fois)</h2>
-      <table><tr><td><code>avancer()</code></td><td>avance d’une case et la colorie</td></tr><tr><td><code>droite()</code> <code>gauche()</code></td><td>tourne d’un quart de tour, sur place</td></tr><tr><td><code>eclair()</code></td><td>éclair sur 3 cases devant : l’adversaire touché est figé 2 s et les cases autour de lui deviennent les tiennes</td></tr><tr><td><code>attendre()</code></td><td>ne fait rien</td></tr></table>
+      <table><tr><td><code>nord()</code> <code>sud()</code><br><code>est()</code> <code>ouest()</code></td><td>avance d’une case dans cette direction et la colorie ; le nord est en haut de ton écran</td></tr><tr><td><code>eclair()</code></td><td>éclair dans les 4 directions, sur 3 cases : l’adversaire touché est figé 2 s et les cases autour de lui deviennent les tiennes</td></tr><tr><td><code>poserCaisse()</code></td><td>pose une caisse sur ta case (3 par match) : quand tu en sors, plus personne n’y passe</td></tr><tr><td><code>attendre()</code></td><td>ne fait rien</td></tr></table>
       <h2>Les capteurs (des questions)</h2>
-      <table><tr><td><code>libre()</code></td><td>Vrai si la case devant est libre ; aussi <code>libre("droite")</code>, <code>libre("gauche")</code></td></tr><tr><td><code>couleur()</code></td><td><code>"vide"</code>, <code>"moi"</code>, <code>"adversaire"</code> ou <code>"mur"</code></td></tr><tr><td><code>cible()</code></td><td>Vrai si un éclair toucherait l’adversaire</td></tr><tr><td><code>distance()</code></td><td>le nombre de cases jusqu’à l’adversaire</td></tr></table>
+      <table><tr><td><code>obstacleNord()</code></td><td>Vrai si la case au nord est un mur, une caisse, le bord ou l’autre robot ; aussi <code>obstacleSud()</code>, <code>obstacleEst()</code>, <code>obstacleOuest()</code></td></tr><tr><td><code>couleurNord()</code></td><td><code>"vide"</code>, <code>"moi"</code>, <code>"adversaire"</code> ou <code>"mur"</code> ; aussi <code>couleurSud()</code>…</td></tr><tr><td><code>cible()</code></td><td>Vrai si un éclair toucherait l’adversaire</td></tr><tr><td><code>distance()</code> <code>caisses()</code></td><td>les cases jusqu’à l’adversaire ; les caisses qu’il te reste</td></tr></table>
     </div>
     <div>
       <h2>L’essentiel</h2>
       <div class="essentiel"><b>Boucle bornée</b> : répéter un nombre de fois fixé.<pre>for i in range(4):
-    avancer()</pre><b>Boucle non bornée</b> : répéter tant qu’une condition est vraie.<pre>while True:
-    if libre():
-        avancer()
-    else:
-        droite()</pre></div>
+    nord()</pre><b>Boucle non bornée</b> : répéter tant qu’une condition est vraie.<pre>while True:
+    while not obstacleNord():
+        nord()
+    est()</pre></div>
       <div class="attention"><b>Attention</b> : une ligne qui commence par <code>for</code>, <code>while</code>, <code>if</code>, <code>elif</code> ou <code>else</code> finit par « : », et les lignes de son bloc sont décalées de 4 espaces.</div>
       <p style="margin:3px 0"><b>Vitesse</b> : chaque ligne recopiée ralentit ton robot. Une boucle évite de recopier.</p>
     </div>
   </div>
   <h2>Exercice 1 — Lire un code</h2>
   <div class="deux">
-    <div><p style="margin:2px 0">Le robot part de la case R, vers le haut. Colorier les cases qu’il visite avec ce code, puis compter les cases coloriées.</p>
+    <div><p style="margin:2px 0">Le robot part de la case R ; le nord est en haut. Colorier les cases qu’il visite avec ce code, puis compter les cases coloriées.</p>
 <pre>for i in range(3):
-    avancer()
-droite()
+    nord()
 for i in range(2):
-    avancer()</pre><p>Nombre de cases (départ compris) : ………</p></div>
+    est()</pre><p>Nombre de cases (départ compris) : ………</p></div>
     <div class="grille" aria-label="Grille de 9 colonnes et 6 lignes">
       <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
       <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
@@ -78,21 +76,22 @@ for i in range(2):
     </div>
   </div>
   <h2>Exercice 2 — Recopier ou répéter ?</h2>
-  <p style="margin:2px 0">Écrire avec une boucle <code>for</code> un code qui fait la même chose que : <code>avancer()</code> <code>avancer()</code> <code>avancer()</code> <code>droite()</code> <code>avancer()</code> <code>avancer()</code> <code>avancer()</code> <code>droite()</code>.</p>
-  <div style="height:13mm;border:1px dashed #111;border-radius:4px"></div>
+  <p style="margin:2px 0">Écrire avec une boucle <code>for</code> un code qui fait la même chose que : <code>nord()</code> <code>nord()</code> <code>nord()</code> <code>est()</code> <code>nord()</code> <code>nord()</code> <code>nord()</code> <code>est()</code>.</p>
+  <div style="height:12mm;border:1px dashed #111;border-radius:4px"></div>
   <div class="deux">
     <div>
   <h2>Exercice 3 — Choisir sa condition</h2>
-  <p style="margin:2px 0">Compléter pour que le robot avance sur les cases qui ne sont pas à lui, et tourne à droite sinon :</p>
+  <p style="margin:2px 0">Compléter pour que le robot monte vers le nord sur les cases qui ne sont pas à lui, et aille à l’est sinon :</p>
 <pre>while True:
-    if libre() ……… couleur() ……… "moi":
-        avancer()
+    if not obstacleNord() …… couleurNord() …… "moi":
+        nord()
     else:
         ………………………</pre>
     </div>
     <div>
   <h2>Je sais…</h2>
   <span class="coche">écrire une boucle <code>for</code> pour répéter un nombre de fois fixé ;</span>
+  <span class="coche">poser une question au robot avec un capteur, comme <code>obstacleNord()</code> ;</span>
   <span class="coche">utiliser <code>while</code> pour répéter tant qu’une condition est vraie ;</span>
   <span class="coche">écrire <code>if</code> / <code>elif</code> / <code>else</code> avec les deux-points et le décalage ;</span>
   <span class="coche">combiner deux conditions avec <code>and</code>, <code>or</code> ou <code>not</code>, et comparer avec <code>==</code>, <code>!=</code>, <code>&lt;=</code>.</span>
