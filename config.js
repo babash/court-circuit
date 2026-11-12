@@ -2,7 +2,7 @@
 // Le duel en direct passe par les canaux temps réel (diffusion et présence) du projet Supabase partagé
 // des applications du site (« SNT-1er Jour »), sans table : les duels ne sont pas enregistrés.
 // COMPTES : le code de l'élève et ses programmes gardés en ligne (schéma court_circuit, supabase/0001-codes-eleves.sql).
-// Il reste à false tant que la migration n'est pas appliquée dans la base (règle M6 : la page n'appelle
+// Il reste à false tant que la migration n'est pas appliquée dans la base (règle M7 : la page n'appelle
 // que des fonctions qui existent).
 // La clé ci-dessous est la clé publique « anon » du projet : elle est publique par conception.
 // Pour installer ta copie : mets l'adresse et la clé publique de ton propre projet Supabase (gratuit),

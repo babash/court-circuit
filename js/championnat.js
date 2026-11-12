@@ -1,7 +1,7 @@
 /* Court-circuit : le mini-championnat de la classe, calculé par la page de l'enseignant·e.
    Le format : un système suisse classé à l'Elo.
    - Chaque élève commence à 1000 points.
-   - À chaque ronde, les élèves sont appariés à un niveau proche (Elo voisin), jamais deux fois contre le ou la même
+   - À chaque ronde, les élèves sont apparié·e·s à un niveau proche (Elo voisin), jamais deux fois contre le ou la même
      tant que c'est possible. Un nombre impair : l'élève le moins bien classé·e qui n'a pas encore été exempté·e joue
      contre Zéro, sans effet sur son Elo.
    - Après chaque duel, l'Elo bouge selon le résultat attendu : battre plus fort·e que soi rapporte plus.

@@ -132,7 +132,7 @@ function pret() {
 function ecriture(secondes, fin) {
   S.etat = 'ecriture'; phase('Écriture', 'ecriture'); const t1 = performance.now() + secondes * 1000; let fini = false;
   S.finEcriture = () => { if (fini) return; if (!S.valide) { dire('Corrige l’erreur avant de lancer.', 'mal'); return; } fini = true; S.finEcriture = null; fin(); };
-  const tic = () => { if (fini || S.etat !== 'ecriture') return; const r = Math.ceil((t1 - performance.now()) / 1000); chrono(r); if (r <= 0) { if (!S.valide) { const garde = S.dernierValide || CODE_DEPART; ED.remplacer(garde); dire('Ton code avait une erreur : ton robot part avec ton dernier code correct.', 'mal', 4000); } S.finEcriture(); return; } setTimeout(tic, 250); };
+  const tic = () => { if (fini || S.etat !== 'ecriture') return; const r = Math.ceil((t1 - performance.now()) / 1000); chrono(r); if (r <= 0) { clearTimeout(init.t); majCode(); if (!S.valide) { ED.remplacer(S.dernierValide || CODE_DEPART); clearTimeout(init.t); majCode(); if (!S.valide) { ED.remplacer(CODE_DEPART); clearTimeout(init.t); majCode(); } dire('Ton code avait une erreur : ton robot part avec ton dernier code correct.', 'mal', 4000); } S.finEcriture(); return; } setTimeout(tic, 250); };
   tic(); majBoutons(); majApercu(); dire(`Tu as ${secondes} s pour écrire ton code. « Je suis prêt·e » pour lancer plus tôt.`);
 }
 function lancerSolo() {
@@ -277,7 +277,7 @@ function majSalle() {
   const n = S.joueurs.length, pl = maPlace();
   $('salleInfo').hidden = false;
   $('salleInfo').innerHTML = `Salle <b class="salle-code" style="font-size:20px;letter-spacing:2px">${esc(S.codeSalle)}</b> · ${n} élève${n > 1 ? 's' : ''}${S.salle && S.salle.demo ? ' · mode démo (cet ordinateur seulement)' : ''}${S.etatReseau && S.etatReseau !== 'connecte' ? ' · connexion…' : ''}`
-    + (pl ? `<br>Championnat : <b>${pl.rang}${pl.rang === 1 ? 're' : 'e'}</b> sur ${S.classement.table.length} · Elo <b>${pl.elo}</b> · ${pl.v} victoire${pl.v > 1 ? 's' : ''}, ${pl.e} nul${pl.e > 1 ? 's' : ''}, ${pl.d} défaite${pl.d > 1 ? 's' : ''}` : '')
+    + (pl ? `<br>Championnat : <b>${pl.rang}${pl.rang === 1 ? 're' : 'e'} place</b> sur ${S.classement.table.length} · Elo <b>${pl.elo}</b> · ${pl.v} victoire${pl.v > 1 ? 's' : ''}, ${pl.e} nul${pl.e > 1 ? 's' : ''}, ${pl.d} défaite${pl.d > 1 ? 's' : ''}` : '')
     + (S.hote && S.etat !== 'duel' && S.etat !== 'ecriture' && S.etat !== 'attente' ? ` <span class="ligne" style="display:inline-flex;margin:4px 0"><button class="bouton fort petit" id="hLancer"${n < 2 ? ' disabled' : ''}>Lancer une manche</button></span>${n < 2 ? '<br>Donne le code ou ce lien à ton ou ta camarade : <a href="' + esc(lienSalle(S.codeSalle)) + '">' + esc(lienSalle(S.codeSalle)) + '</a>' : ''}` : '');
   const b = $('hLancer'); if (b) b.onclick = () => lancerManche(60);
 }
@@ -321,13 +321,13 @@ function recevoir(msg) {
 }
 function majEloFin() {
   const el = $('eloFin'), pl = maPlace(); if (!el || !pl || !S.classement || S.mode !== 'salle') return;
-  el.textContent = `Championnat, après la ronde ${S.classement.n} : tu es ${pl.rang}${pl.rang === 1 ? 're' : 'e'} sur ${S.classement.table.length}, Elo ${pl.elo}.`;
+  el.textContent = `Championnat, après la ronde ${S.classement.n} : tu es à la ${pl.rang}${pl.rang === 1 ? 're' : 'e'} place sur ${S.classement.table.length}, Elo ${pl.elo}.`;
 }
 function finSeance() {
   const t = S.classement.table, pl = maPlace(), podium = t.slice(0, 3);
   const items = S.rencontres.filter(r => !r.zero);
   ouvrir(`<h2>Fin de la séance</h2>
-    <p class="sous">${pl ? `Tu finis <b>${pl.rang}${pl.rang === 1 ? 're' : 'e'}</b> sur ${t.length}, avec un Elo de <b>${pl.elo}</b> (${pl.v} victoire${pl.v > 1 ? 's' : ''}, ${pl.e} nul${pl.e > 1 ? 's' : ''}, ${pl.d} défaite${pl.d > 1 ? 's' : ''}).` : 'Le championnat est fini.'}</p>
+    <p class="sous">${pl ? `Tu finis à la <b>${pl.rang}${pl.rang === 1 ? 're' : 'e'} place</b> sur ${t.length}, avec un Elo de <b>${pl.elo}</b> (${pl.v} victoire${pl.v > 1 ? 's' : ''}, ${pl.e} nul${pl.e > 1 ? 's' : ''}, ${pl.d} défaite${pl.d > 1 ? 's' : ''}).` : 'Le championnat est fini.'}</p>
     <p>Le podium : ${podium.map(j => `<b>${j.rang}. ${esc(j.pseudo)}</b> (${j.elo})`).join(' · ')}</p>
     <h3 style="font-family:var(--titre);margin:12px 0 4px">Les codes de tes adversaires</h3>
     ${items.length ? items.map((r, i) => `<p style="margin:8px 0 2px"><b>Ronde ${r.n}</b> · contre <b>${esc(r.adv)}</b> · ${r.moi > r.lui ? 'gagné' : r.moi < r.lui ? 'perdu' : 'égalité'} ${r.moi} – ${r.lui}</p>${blocCode(r.code, i)}`).join('') : '<p class="sous">Aucun duel contre un·e camarade pendant cette séance.</p>'}

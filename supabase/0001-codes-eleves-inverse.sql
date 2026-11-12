@@ -15,7 +15,8 @@ begin;
 --  d'essais de Court-circuit dans commun.essais. Rien d'autre.
 --
 --  Avant de le lancer : remettre COMPTES à false dans config.js et publier la
---  page, pour qu'elle n'appelle plus ces fonctions (règle M6).
+--  page, pour qu'elle n'appelle plus ces fonctions (règles M6 et M7 : on
+--  retire en deux temps, la page d'abord).
 -- =============================================================================
 
 -- Garde-fou : le bon rôle, et rien d'autre que les objets de 0001 dans le

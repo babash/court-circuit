@@ -55,7 +55,7 @@ Le code de départ est `for i in range(8): nord()` : il marche tout de suite, ma
 ## Pourquoi ça marche
 
 - **Tout le monde marque des points** : un robot colorie toujours quelques cases, même avec un code très simple.
-- **Les meilleurs codes gagnent** : en simulation sur des cartes tirées au hasard, les quatre premiers niveaux de Zéro sont battus, environ neuf fois sur dix, par un code un peu plus élaboré que le leur (un `for`, puis `while` avec des boucles, puis les capteurs `obstacle…`, puis `couleur…`) ; voler une case adverse compte double.
+- **Les meilleurs codes gagnent** : en simulation, sur 500 cartes tirées au hasard pour chaque niveau, Zéro 1 est battu 90 à 95 fois sur 100 par un simple `for` ; Zéro 2, 93 à 97 fois sur 100 par `while` et des boucles ; Zéro 3 et Zéro 4, 80 à 97 fois sur 100 par un code qui regarde les couleurs pour aller vers les cases à prendre (`couleurNord() != "moi"`…). Un code qui ne regarde que les obstacles bat Zéro 3 moins d’une fois sur deux : c’est la marche à franchir. Voler une case adverse compte double.
 - **Les cartes changent à chaque ronde** : un trajet appris par cœur ne suffit plus, il faut regarder avant d'avancer.
 - **L'éditeur des programmeur·se·s** (règle 20) : coloration, indentation automatique et touche Tab, guides des blocs, autocomplétion qui comprend aussi le français (« si », « tant que », « sinon », « droite » pour `est()`), erreurs affichées comme en Python (« Did you mean: 'obstacleNord'? ») puis expliquées en français.
 - **Apprendre des autres** : le code de l'adversaire est visible pendant le duel, on peut en emprunter une ligne après chaque duel, et **tout son code à la fin de la séance**.

@@ -33,12 +33,13 @@ function createMatch(cfg) {
   const P = {}; let t = 0; const frames = [], pending = [];
   const periodOf = (n, rep) => cfg.speed === 'fixe' ? PERIOD : PERIOD + rep;
   function voisin(w, d) { const p = P[w], [dx, dy] = DV[monde(w, d)]; return [p.x + dx, p.y + dy]; }
-  // l'éclair part dans les 4 directions, sur 3 cases, et s'arrête au premier mur ou à la première caisse
+  // l'éclair part dans les 4 directions, sur 3 cases, et s'arrête au premier mur ou à la première caisse ;
+  // un robot posé sur une caisse (la sienne, avant d'en sortir) peut être touché
   function rayons(w) {
     const p = P[w], q = P[other(w)], out = [];
     for (let d = 0; d < 4; d++) {
       const [dx, dy] = DV[d]; let len = 0, touche = false;
-      for (let r = 1; r <= RANGE; r++) { const x = p.x + dx * r, y = p.y + dy * r; if (isBlock(x, y)) break; len = r; if (q.x === x && q.y === y) { touche = true; break; } }
+      for (let r = 1; r <= RANGE; r++) { const x = p.x + dx * r, y = p.y + dy * r; if (q.x === x && q.y === y) { len = r; touche = true; break; } if (isBlock(x, y)) break; len = r; }
       out.push({ d, len, touche });
     }
     return out;

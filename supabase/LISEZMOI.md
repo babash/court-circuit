@@ -6,7 +6,7 @@ Ce dossier contient les migrations de la base de Court-circuit. Le jeu lui-même
 - **Le schéma :** `court_circuit`, que l'API n'expose pas. Les fonctions d'entrée sont dans `public`, avec le préfixe `cc_`.
 - **Les règles suivies :** `architecture/regles-supabase.md` (P1 à P10, M1 à M8) et la spécification des codes, `architecture/codes-acces.md`.
 - **Il faut d'abord le socle commun** (`supabase/0003-schema-commun.sql` du site, appliqué le 11/11) : le compteur d'essais `commun.essais` sert ici aussi.
-- **Le registre des tables** (`commun.registre`) range `court_circuit` après la migration `base_unique_0005_registre_court_circuit` du site (`supabase/0005-registre-court-circuit.sql`), qui passe avant ou après celle-ci.
+- **Le registre des tables** (`commun.registre`) range `court_circuit` après la migration `base_unique_0005_registre_court_circuit` du site, qui passe avant ou après celle-ci. Son fichier, `supabase/0005-registre-court-circuit.sql`, attend sur la branche `archi/t58-registre` : il est publié sur `main` après son application.
 
 ## Où en est la base
 
@@ -64,7 +64,8 @@ Chaque fonction borne ses paramètres et répond `{ "ok": false, "message": … 
 ```sql
 -- les tables : RLS, aucun droit pour anon ni authenticated (attendu : 4 lignes, rls vrai, droits faux)
 select c.relname, c.relrowsecurity as rls,
-  has_table_privilege('anon', c.oid, 'select') or has_table_privilege('anon', c.oid, 'insert') as droits_anon
+  has_table_privilege('anon', c.oid, 'select, insert, update, delete, truncate, references, trigger, maintain') as droits_anon,
+  has_table_privilege('authenticated', c.oid, 'select, insert, update, delete, truncate, references, trigger, maintain') as droits_authenticated
 from pg_class c where c.relnamespace = 'court_circuit'::regnamespace and c.relkind = 'r';
 
 -- le schéma fermé (attendu : false, false)
@@ -82,7 +83,7 @@ Puis les conseillers (`get_advisors`) : seuls « RLS sans règle » (0008) et «
 
 ## L'essai local
 
-La migration a été essayée sur un PostgreSQL local (rôles `anon`, `authenticated` et `service_role` comme Supabase, `pgcrypto` dans `extensions`, socle commun appliqué), avec des données inventées, jamais sur la base en ligne :
+La migration a été essayée sur un PostgreSQL 16 local (rôles `anon`, `authenticated` et `service_role` comme Supabase, `pgcrypto` dans `extensions`, socle commun appliqué), avec des données inventées, jamais sur la base en ligne. PostgreSQL 16 n'a pas le droit `maintain`, nouveau dans PostgreSQL 17, la version de la base en ligne : les copies essayées n'avaient donc pas les mots `, maintain`, et le reste de leur texte était identique au fichier. Ce qui a été vérifié :
 - appliquée deux fois de suite sans erreur, puis retirée par l'inverse et appliquée de nouveau ; l'inverse s'arrête si une migration plus récente ou un objet hors du schéma se sert de `court_circuit` ;
 - relue par l'Architecte, qui l'a rejouée à part (78 contrôles en `anon`, la liste des 64 mots vérifiée contre les trois autres listes) ;
 - en rôle `anon` : création, connexion avec le code tapé en minuscules avec des espaces, programmes gardés, mis à jour par leur nom, supprimés, compte effacé ; la lecture des tables, les fonctions internes et `commun` sont refusées ;
@@ -92,7 +93,7 @@ La migration a été essayée sur un PostgreSQL local (rôles `anon`, `authentic
 
 ## Revenir en arrière
 
-1. `COMPTES: false` dans `config.js`, publié (règle M6 : la page n'appelle plus les fonctions).
+1. `COMPTES: false` dans `config.js`, publié : la page n'appelle plus les fonctions (règles M6 et M7 : on retire en deux temps, la page d'abord).
 2. Si l'enseignant veut garder les programmes des élèves, il exporte d'abord `court_circuit.eleves` et `court_circuit.programmes` (Table Editor, export ; règle M8). L'export reste hors du dépôt.
 3. `0001-codes-eleves-inverse.sql`, par `apply_migration`, sous le nom `court_circuit_0001_codes_eleves_inverse`.
 

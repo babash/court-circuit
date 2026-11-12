@@ -65,8 +65,16 @@ const Comptes = (() => {
 
 /* Mode démo : les mêmes fonctions que la base, imitées sur cet appareil (rien ne part en ligne). */
 const Imitation = (() => {
-  const lire = () => { try { return JSON.parse(localStorage.getItem('court-circuit-demo:base')) || { eleves: [] }; } catch (e) { return { eleves: [] }; } };
-  const ecrire = b => { try { localStorage.setItem('court-circuit-demo:base', JSON.stringify(b)); } catch (e) {} };
+  // comme le reste de l'appareil, la base imitée est oubliée un jour après sa création
+  const CLE = 'court-circuit-demo:base', JOUR = 24 * 3600 * 1000;
+  const lire = () => {
+    try {
+      const b = JSON.parse(localStorage.getItem(CLE));
+      if (!b || !Array.isArray(b.eleves) || !(Date.now() - (b.t || 0) < JOUR)) { localStorage.removeItem(CLE); return { eleves: [] }; }
+      return b;
+    } catch (e) { return { eleves: [] }; }
+  };
+  const ecrire = b => { try { b.t = b.t || Date.now(); localStorage.setItem(CLE, JSON.stringify(b)); } catch (e) {} };
   const hasard = n => { const a = new Uint8Array(1); crypto.getRandomValues(a); return a[0] % n; };
   const uuid = () => crypto.randomUUID ? crypto.randomUUID() : nouvelId() + nouvelId();
   const parJeton = (b, j) => b.eleves.find(e => e.jeton === j);
