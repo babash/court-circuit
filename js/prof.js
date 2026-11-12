@@ -3,7 +3,9 @@
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const P = { code: null, salle: null, joueurs: [], manche: null, matchs: {}, derniers: {}, historique: {}, id: nouvelId() };
-function lien(code) { const u = new URL('index.html', location.href); u.search = '?classe=' + code; return u.toString(); }
+// Le lien de la salle : le dossier de cette page (https://babash.github.io/court-circuit/?classe=ABCD en ligne),
+// plus court à projeter et à scanner ; index.html quand la page est ouverte comme fichier (file:).
+function lien(code) { const u = new URL(location.protocol === 'file:' ? 'index.html' : './', location.href); u.search = '?classe=' + code; return u.toString(); }
 function ouvrirLaSalle(code) {
   if (P.salle) P.salle.fermer();
   P.code = code; stock.ecrire('salle-prof', code);
