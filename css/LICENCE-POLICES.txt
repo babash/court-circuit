@@ -1,35 +1,7 @@
-Court-circuit — Babash - NSI Tani Malandi
+Court-circuit : les polices de css/polices.css
 
-Le code (fichiers .html, .css et .js de ce dossier, hors dossier vendor/) est sous licence MIT :
-
-MIT License
-
-Copyright (c) 2026 Babash - NSI Tani Malandi
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-
-Les documents (README.md, memo.html, memo.pdf) sont sous licence
-Creative Commons BY-SA 4.0 : https://creativecommons.org/licenses/by-sa/4.0/deed.fr
-
-Les bibliothèques du dossier vendor/ gardent leur propre licence (MIT) :
-voir vendor/LICENCES-BIBLIOTHEQUES.txt.
-Les polices de css/polices.css sont sous SIL Open Font License 1.1 (fichiers de fontsource 5.3.0) :
+Les polices intégrées dans css/polices.css (fichiers woff2 de fontsource 5.3.0, écrits en base64)
+sont sous SIL Open Font License 1.1 :
 - Chakra Petch : Copyright 2018 The Chakra Petch Project Authors (https://github.com/m4rc1e/Chakra-Petch.git)
 - JetBrains Mono : Copyright 2020 The JetBrains Mono Project Authors (https://github.com/JetBrains/JetBrainsMono)
 - Atkinson Hyperlegible : Copyright 2020 Braille Institute of America, Inc.
