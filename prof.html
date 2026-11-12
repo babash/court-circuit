@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Court-circuit · salle de classe</title>
+<title>Court-circuit · salle de classe et mini-championnat</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23070B16'/%3E%3Cpath d='M18 3 8 18h7l-2 11 11-16h-7z' fill='%23FF5CA8'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="css/polices.css">
 <link rel="stylesheet" href="css/jeu.css">
@@ -34,17 +34,23 @@ table{border-collapse:collapse;width:100%;font-size:15px}th,td{padding:6px 8px;b
     </div>
   </section>
   <section class="consigne">
-    <div class="ligne" style="margin:0">
-      <label>Carte <select id="carte"></select></label>
+    <div><b>Mini-championnat</b> · à chaque ronde, les élèves sont appariés à un niveau proche (Elo voisin), jamais deux fois contre le ou la même ; tout le monde part de 1000 points ; un nombre impair joue contre Zéro, sans effet sur l’Elo. À la fin, chaque élève peut copier le code de ses adversaires.</div>
+    <div class="ligne" style="margin:8px 0 0">
+      <label>Durée <select id="rondes"></select></label> <span id="conseil" class="vitesse"></span>
       <label>Écriture <select id="ecriture"><option value="30">30 s</option><option value="60" selected>1 min</option><option value="90">1 min 30</option><option value="120">2 min</option></select></label>
-      <button class="bouton fort" id="lancer" type="button">Lancer la manche</button>
+      <label>Carte <select id="carte"></select></label>
+    </div>
+    <div class="ligne" style="margin:8px 0 0">
+      <button class="bouton fort" id="lancer" type="button">Lancer la ronde 1</button>
+      <button class="bouton" id="terminer" type="button">Terminer la séance</button>
+      <button class="bouton" id="reinit" type="button">Nouvelle séance</button>
       <span id="infoManche" class="vitesse"></span>
     </div>
-    <div><b id="nbJoueurs">0 élève</b> dans la salle · les paires changent à chaque manche ; un nombre impair joue contre Zéro.</div>
+    <div><b id="nbJoueurs">0 élève</b> dans la salle · la carte est tirée au hasard, de plus en plus chargée au fil des rondes.</div>
     <div class="liste-joueurs" id="joueurs"></div>
   </section>
   <section><h2 style="font-family:var(--titre);margin:0 0 8px;font-size:20px" id="titreMatchs">Les duels</h2><div class="matchs" id="matchs"></div></section>
-  <section id="bilan" hidden><h2 style="font-family:var(--titre);margin:0 0 8px;font-size:20px">Bilan de la manche</h2><div id="bilanTexte"></div></section>
+  <section id="bilan" hidden><h2 style="font-family:var(--titre);margin:0 0 8px;font-size:20px" id="titreBilan">Bilan de la ronde</h2><div id="bilanTexte"></div></section>
 </main>
 <footer class="pied">Court-circuit · Babash - NSI Tani Malandi · code MIT, documents CC BY-SA 4.0 · <a href="https://github.com/babash/Babash-NSI-SNT/tree/main/snt/fichiers/court-circuit" target="_blank" rel="noopener">Code source sur GitHub</a></footer>
 <script src="config.js"></script>
@@ -56,6 +62,7 @@ table{border-collapse:collapse;width:100%;font-size:15px}th,td{padding:6px 8px;b
 <script src="js/partie.js"></script>
 <script src="js/dessin.js"></script>
 <script src="js/reseau.js"></script>
+<script src="js/championnat.js"></script>
 <script src="js/prof.js"></script>
 </body>
 </html>

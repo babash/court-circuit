@@ -86,6 +86,13 @@ input[type=text],select{min-height:44px;border-radius:10px;border:1px solid var(
 .liste-joueurs span{padding:4px 10px;border-radius:20px;background:var(--panel2);border:1px solid var(--trait);font-size:14px}
 .pied{max-width:1280px;margin:8px auto 14px;padding:8px 14px;border-top:1px solid var(--trait);font-size:13px;color:var(--gris);text-align:center}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.programmes{list-style:none;margin:8px 0;padding:0;display:flex;flex-direction:column;gap:6px}
+.programmes li{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:var(--panel2);border:1px solid var(--trait);border-radius:10px;padding:6px 10px}
+.programmes li span{flex:1;min-width:150px;display:flex;flex-direction:column}.programmes small{color:var(--gris)}
+.code-eleve{font-family:var(--code);font-weight:700;color:var(--jaune);letter-spacing:1px}
+.code-gros{font-family:var(--code);font-size:clamp(24px,7vw,40px);font-weight:700;letter-spacing:2px;color:var(--jaune);text-align:center;margin:10px 0;word-break:break-all}
+.classement{width:100%;border-collapse:collapse;font-size:15px}.classement th,.classement td{padding:5px 8px;border-bottom:1px solid var(--trait);text-align:left}
+.classement th{font-family:var(--titre);color:var(--gris)}.classement td.n{text-align:right;font-variant-numeric:tabular-nums}
 @media (max-width:860px){
   .jeu{grid-template-columns:1fr;padding:8px}
   .ed{height:260px}
