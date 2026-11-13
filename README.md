@@ -70,6 +70,7 @@ Le code de départ est `for i in range(8): nord()` : il marche tout de suite, ma
 | **Découvrir les boucles** (≈ 15 min) | L'entraînement : 6 cartes de plus en plus difficiles, et une 7e tirée au hasard. Sur la première, un simple `for` donne la première étoile ; la deuxième demande `while` et des changements de direction, la troisième de regarder les cases (`couleurEst() != "moi"`). |
 | **Une séance en classe** (≈ 45 min) | Entraînement, puis le mini-championnat dans la salle projetée (7 rondes : environ un quart d'heure). |
 | **En binôme** | Un clavier pour deux : l'un·e écrit, l'autre lit le code de l'adversaire et conseille ; on change à chaque manche. |
+| **Garder ses programmes** | « Mes codes » : avec un code élève facultatif (2 mots et 3 chiffres, par exemple `PINCE-DIODE-482`), l'élève garde jusqu'à 30 programmes en ligne et les retrouve sur n'importe quel ordinateur. |
 | **Pour s'entraîner seul·e** | Défier Zéro : 5 niveaux, son code s'affiche (on peut le copier à la fin), il progresse quand on le bat. Sans réseau aussi. |
 | **Sur papier** | Le [mémo à imprimer](https://babash.github.io/court-circuit/memo.html) (une page A4 en noir et blanc, aussi en [PDF](https://babash.github.io/court-circuit/memo.pdf)) : les mots du jeu, l'essentiel et trois exercices. |
 | **Avec des collègues** | Chaque collègue ouvre sa propre salle depuis la même adresse, sans compte : chaque salle a son code de 4 lettres, tiré au hasard. |
@@ -87,7 +88,7 @@ Le code de départ est `for i in range(8): nord()` : il marche tout de suite, ma
 ## Données des élèves
 
 - **Les duels et le championnat ne sont pas enregistrés.** Une salle passe par les canaux temps réel (diffusion et présence) d'un projet Supabase, sans aucune table : le prénom ou le pseudo et le code de chaque élève ne vont qu'aux élèves de sa salle et à sa page projetée, pendant la séance. Le classement vit tant que la page de la salle est ouverte. Aucun champ pour le nom ni pour l'adresse électronique.
-- **Le code élève, facultatif** (bientôt : la base doit d'abord être mise à jour) : l'élève qui veut garder ses programmes reçoit un code de 2 mots et 3 chiffres (par exemple `PINCE-DIODE-482`), qui suffit pour les retrouver sur n'importe quel ordinateur. Sont gardés dans le projet Supabase : son prénom ou son pseudo, son code et ses programmes (30 au plus), effacés 12 mois après sa dernière visite ; « Effacer mes données » efface tout avant. Le détail est dans [supabase/LISEZMOI.md](supabase/LISEZMOI.md).
+- **Le code élève, facultatif** : l'élève qui veut garder ses programmes reçoit un code de 2 mots et 3 chiffres (par exemple `PINCE-DIODE-482`), qui suffit pour les retrouver sur n'importe quel ordinateur. Sont gardés dans le projet Supabase : son prénom ou son pseudo, son code et ses programmes (30 au plus), effacés 12 mois après sa dernière visite ; « Effacer mes données » efface tout avant. Le détail est dans [supabase/LISEZMOI.md](supabase/LISEZMOI.md).
 - **Sur l'appareil** : le pseudo, le code en cours, les étoiles, le niveau de Zéro et le jeton de session du code élève, dans le stockage du navigateur, un jour au plus.
 
 L'entraînement et le défi contre Zéro marchent sans réseau : seules la salle de classe, l'entrée dans une salle et le code élève se connectent à Supabase.
@@ -115,7 +116,7 @@ Sans projet Supabase, laisse `SUPABASE_URL` vide : le jeu passe en mode démo, o
 
 ## Feuille de route
 
-- **Le code élève en service**, puis le reste de la règle 21 des Ressources NSI et SNT : un code enseignant·e qui voit les codes de ses élèves, et les étoiles gardées en ligne.
+- **Le reste de la règle 21** des Ressources NSI et SNT : un code enseignant·e qui voit les codes de ses élèves, et les étoiles gardées en ligne.
 - **Un essai en classe** pour régler les durées et les cartes.
 - **Le rejeu d'une manche** au tableau, pas à pas.
 

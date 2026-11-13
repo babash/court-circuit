@@ -6,11 +6,11 @@ Ce dossier contient les migrations de la base de Court-circuit. Le jeu lui-même
 - **Le schéma :** `court_circuit`, que l'API n'expose pas. Les fonctions d'entrée sont dans `public`, avec le préfixe `cc_`.
 - **Les règles suivies :** `architecture/regles-supabase.md` (P1 à P10, M1 à M8) et la spécification des codes, `architecture/codes-acces.md`.
 - **Il faut d'abord le socle commun** (`supabase/0003-schema-commun.sql` du dépôt du site, [`babash/Babash-NSI-SNT`](https://github.com/babash/Babash-NSI-SNT), appliqué le 11/11) : le compteur d'essais `commun.essais` sert ici aussi.
-- **Le registre des tables** (`commun.registre`) range `court_circuit` après la migration `base_unique_0005_registre_court_circuit` du dépôt du site, qui passe avant ou après celle-ci. Son fichier, `supabase/0005-registre-court-circuit.sql`, attend sur la branche `archi/t58-registre` de ce dépôt du site : il est publié sur `main` après son application.
+- **Le registre des tables** (`commun.registre`) range `court_circuit` après la migration `base_unique_0005_registre_court_circuit` du dépôt du site, qui passe avant ou après celle-ci. Son fichier est `supabase/0005-registre-court-circuit.sql` du dépôt du site ; il est appliqué depuis le 13/11/2026 à 06:49, heure de Mayotte (version 20261113034900).
 
 ## Où en est la base
 
-**Rien n'est appliqué.** La migration attend l'accord de l'enseignant, qui voit le SQL exact avant (règle M4). Tant qu'elle n'est pas appliquée, `config.js` garde `COMPTES: false` : la page ne montre ni le code élève ni « Mes codes », et n'appelle aucune de ces fonctions (règle M7).
+**La migration est appliquée**, après l'accord de l'enseignant sur le SQL exact (« Ok base Court-circuit », 13/11/2026 à 06:45, heure de Mayotte ; règle M4) : `court_circuit_0001_codes_eleves`, le 13/11 à 06:48 (version 20261113034818), par le chef d'orchestre, sans les lignes `begin;` et `commit;`. Le texte enregistré a la même empreinte que ce fichier (md5 sans commentaires, espaces ni `;` : `f2a0459a…`) : **le fichier de ce dossier est exactement celui qui a été appliqué**. Vérifié aussitôt par les métadonnées seulement : 4 tables sous RLS, sans règle ni droit ; le schéma fermé à `anon` et à `authenticated` ; les 6 fonctions d'entrée `cc_…` appelables par `anon` seul, les 4 fonctions internes par personne ; 64 mots ; 0 compte. Ensuite seulement, `config.js` passe à `COMPTES: true` (règle M7 : la page n'appelle que des fonctions qui existent).
 
 ## Les fichiers
 
