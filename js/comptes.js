@@ -2,7 +2,7 @@
    Un code de 2 mots et 3 chiffres (PINCE-DIODE-482) suffit pour revenir depuis n'importe quel appareil.
    La page ne garde qu'un jeton de session, un jour au plus (postes partagés).
    Les fonctions de la base sont dans supabase/0001-codes-eleves.sql ; en mode démo, elles sont imitées sur cet appareil.
-   Tant que la migration n'est pas appliquée, config.js garde COMPTES à false et rien de tout cela n'apparaît. */
+   Si la migration n'est pas appliquée (une copie du jeu), config.js garde COMPTES à false et rien de tout cela n'apparaît. */
 
 // La liste des mots, dans l'ordre de court_circuit.mots (rang 0 à 63) : thème « l'atelier ».
 const MOTS_CODES = ['MARTEAU', 'PINCE', 'SCIE', 'ENCLUME', 'PERCEUSE', 'BOULON', 'ECROU', 'RIVET',
@@ -46,7 +46,13 @@ const Comptes = (() => {
   async function rpc(fn, args) {
     if (demo) return Imitation[fn](args);
     // la clé publique : « publishable » (sb_publishable_…) ou ancienne clé « anon » (un JWT) ; seul un JWT va aussi dans Authorization (T57)
-    const r = await fetch(cfg.SUPABASE_URL + '/rest/v1/rpc/' + fn, { method: 'POST', headers: Object.assign({ apikey: cfg.SUPABASE_KEY, 'Content-Type': 'application/json' }, String(cfg.SUPABASE_KEY).indexOf('eyJ') === 0 ? { Authorization: 'Bearer ' + cfg.SUPABASE_KEY } : {}), body: JSON.stringify(args) });
+    let r;
+    try {
+      r = await fetch(cfg.SUPABASE_URL + '/rest/v1/rpc/' + fn, { method: 'POST', headers: Object.assign({ apikey: cfg.SUPABASE_KEY, 'Content-Type': 'application/json' }, String(cfg.SUPABASE_KEY).indexOf('eyJ') === 0 ? { Authorization: 'Bearer ' + cfg.SUPABASE_KEY } : {}), body: JSON.stringify(args) });
+    } catch (e) {
+      // pas de réseau, ou adresse bloquée : un message en français plutôt que « Failed to fetch »
+      throw new Error('Pas de connexion à la base : vérifie le réseau, puis réessaie. Tu peux jouer sans ton code élève.');
+    }
     if (!r.ok) throw new Error('La base ne répond pas (' + r.status + ').');
     return r.json();
   }
