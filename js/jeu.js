@@ -1,16 +1,20 @@
-/* Court-circuit : la page des élèves (entraînement, défi contre Zéro, duel en direct dans une salle,
+/* Court-circuit : la page des élèves (entraînement en 10 challenges, défi contre Zéro, duel en direct dans une salle,
    mini-championnat de la classe, programmes gardés avec le code de l'élève). */
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const CODE_DEPART = 'for i in range(8):\n    nord()';
-// Entraînement : 3 étoiles par carte (nombre de cases coloriées en 30 s, seul·e sur la carte)
-const OBJECTIFS = {
-  piste: [9, 35, 60], poteaux: [9, 20, 28], couloirs: [9, 18, 30], salles: [4, 12, 17], damier: [9, 18, 25], dedale: [9, 15, 25],
-};
-const PISTES_ETOILES = ['Une boucle for suffit : for i in range(8): nord()', 'Répète sans fin (while True) et change de direction : nord(), est(), sud()…', 'Regarde avant d’avancer : while not obstacleNord():, couleurEst() != "moi".'];
-const HASARD = 'h'; // la 7e carte de l'entraînement : tirée au hasard, sans étoiles
+// Entraînement : 10 challenges sans limite de temps (js/challenges.js). Le curseur règle la vitesse de l'affichage seulement :
+// le robot fait toujours une action tous les 3 ticks, le résultat ne change pas.
+const VITESSES = [
+  { nom: 'lente', tps: 5, txt: 'une action toutes les 0,6 seconde' },
+  { nom: 'normale', tps: 10, txt: 'une action toutes les 0,3 seconde, comme en match' },
+  { nom: 'rapide', tps: 20, txt: 'une action toutes les 0,15 seconde' },
+  { nom: 'très rapide', tps: 50, txt: 'une action toutes les 0,06 seconde' },
+];
+const CADENAS = '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false"><path d="M4.5 7V5a3.5 3.5 0 0 1 7 0v2" fill="none" stroke="currentColor" stroke-width="1.8"/><rect x="2.5" y="7" width="11" height="8" rx="2" fill="currentColor"/></svg>';
+const codeTxt = t => esc(t).replace(/`([^`]+)`/g, '<code>$1</code>');
 
-const S = { mode: null, etat: 'accueil', carteI: 0, zLv: 0, moi: 'K', partie: null, t0: 0, vu: 0, salle: null, hote: false, monId: idOnglet(), pseudo: stock.lire('pseudo') || '', manche: null, monMatch: null, attente: null, adv: null, joueurs: [], derniers: {}, resultats: {}, pendants: {}, envoiTimer: 0, rencontres: [], classement: null, nomCarte: '', ideeCarte: '' };
+const S = { mode: null, etat: 'accueil', chI: 0, iv: 0, ch: null, essai: null, run: 0, echecs: {}, vitesse: 1, zLv: 0, moi: 'K', partie: null, t0: 0, vu: 0, salle: null, hote: false, monId: idOnglet(), pseudo: stock.lire('pseudo') || '', manche: null, monMatch: null, attente: null, adv: null, joueurs: [], derniers: {}, resultats: {}, pendants: {}, envoiTimer: 0, rencontres: [], classement: null, nomCarte: '', ideeCarte: '' };
 let ED, PL;
 
 /* ---------- affichage ---------- */
@@ -42,6 +46,7 @@ function ajusterPlateau() {
 }
 function dessiner() {
   if (!S.carte) return;
+  if (S.mode === 'solo' && S.infoCarte) return dessinerChallenge();
   const p = S.partie, opt = { murs: S.murs, retourne: S.moi === 'Z' };
   if (p) { const f = p.m.frames, t = Math.min(f.length - 1, p.m.t) + (S.etat === 'duel' || S.etat === 'solo' ? Math.min(.99, (performance.now() - S.t0) / 100 - p.m.t) : 0); PL.dessiner(f, Math.max(0, t), opt); }
   else { const m = createMatch({ map: S.carte, code: { K: '', Z: '' }, solo: S.mode === 'solo' }); PL.dessiner(m.frames, 0, { ...opt, path: S.apercu }); }
@@ -50,10 +55,173 @@ function poserCarte(rows, nom = '', idee = '') {
   S.carte = rows; S.nomCarte = nom; S.ideeCarte = idee; S.murs = new Set(); rows.forEach((r, y) => [...r].forEach((c, x) => { if (c === '#') S.murs.add(x + y * W); }));
   S.partie = null; majApercu(); ajusterPlateau();
 }
-function choisirCarte(i) { // entraînement : une des 6 cartes, ou une carte au hasard
-  S.carteI = i; if ($('carte')) $('carte').value = i;
-  if (i === HASARD) { const g = 1 + Math.floor(Math.random() * 9999); const c = carteDeManche(g, 3); poserCarte(c.rows, c.nom, 'Une carte tirée au hasard : regarde avant d’avancer.'); }
-  else poserCarte(carte(i), CARTES[i].nom, CARTES[i].idee);
+
+/* ---------- l'entraînement : 10 challenges sans limite de temps ---------- */
+// La progression, sur l'appareil (le même stock qu'avant ; l'ancienne clé « etoiles » n'est plus lue) :
+// { reussis: [identifiants], codes: { identifiant: le dernier code de l'élève pour ce challenge } }
+function progression() {
+  const p = stock.lire('challenges') || {}, connus = new Set(CHALLENGES.map(c => c.id));
+  return { reussis: Array.isArray(p.reussis) ? p.reussis.filter(id => connus.has(id)) : [], codes: p.codes && typeof p.codes === 'object' ? p.codes : {} };
+}
+const ecrireProgression = p => stock.ecrire('challenges', p);
+const reussi = id => progression().reussis.includes(id);
+const baseFinie = () => CHALLENGES.filter(c => !c.haut).every(c => reussi(c.id));
+const ouvert = c => reussi(c.id) || (c.haut ? baseFinie() : c.i === 0 || reussi(CHALLENGES[c.i - 1].id));
+function premierAFaire() { const c = CHALLENGES.find(x => ouvert(x) && !reussi(x.id)); return c ? c.i : Math.min(S.chI, CHALLENGES.length - 1); }
+function poserVersion() {
+  const c = S.infoCarte = lireCarte(S.ch.cartes[S.iv]); poserCarte(c.rows, nomChallenge(S.ch) + ' · ' + S.ch.nom, '');
+  $('legende').innerHTML = '<span class="l-k">Ton robot : en cyan</span>' + (c.buts.length ? `<span class="l-b">${c.buts.length > 1 ? 'Ligne d’arrivée' : 'Case à atteindre'} : drapeau jaune</span>` : c.toutes ? '<span class="l-c">À colorier : toutes les cases libres</span>' : '<span class="l-c">Cases à colorier : pointillés jaunes</span>');
+}
+function choisirChallenge(i) {
+  S.run++; S.essai = null; S.chI = i; S.ch = CHALLENGES[i]; S.iv = 0; S.confirmeDepart = false;
+  const code = progression().codes[S.ch.id];
+  ED.remplacer(typeof code === 'string' ? code : S.ch.code); clearTimeout(init.t);
+  poserVersion(); majFil();
+  const t = trousDe(ED.code()); if (t.length) ED.selectionner(t[0].ligne, t[0].col, t[0].long);
+}
+function majFil() {
+  const pas = c => { const r = reussi(c.id), o = ouvert(c), ici = c.i === S.chI, etat = r ? 'réussi' : o ? (ici ? 'en cours' : 'à faire') : 'verrouillé';
+    return `<li><button type="button" class="fil-pas${r ? ' fait' : o ? '' : ' ferme'}" data-c="${c.i}"${ici ? ' aria-current="step"' : ''}${o ? '' : ' aria-disabled="true"'} title="${esc(nomChallenge(c) + ' : ' + c.nom + ' (' + etat + ')')}" aria-label="${esc(nomChallenge(c) + ' : ' + c.nom + ', ' + etat)}">${r ? '✓' : o ? c.rang : CADENAS}</button></li>`; };
+  const n = progression().reussis.length;
+  $('fil').innerHTML = `<div class="fil-groupe"><span class="fil-titre">Challenges</span><ol>${CHALLENGES.filter(c => !c.haut).map(pas).join('')}</ol></div>`
+    + `<div class="fil-groupe hf"><span class="fil-titre">Hauts-faits</span><ol>${CHALLENGES.filter(c => c.haut).map(pas).join('')}</ol></div><span class="fil-compte">${n} sur ${CHALLENGES.length} réussi${n > 1 ? 's' : ''}</span>`;
+}
+function majConsigne() {
+  const c = S.ch, n = c.cartes.length, e = S.echecs[c.id] || 0;
+  $('consigne').innerHTML = `<div class="ch-tete"><span class="ch-sur">${esc(nomChallenge(c))} sur 5 · ${c.trous ? 'code à trous' : 'carte seule'}</span>${reussi(c.id) ? '<span class="ch-etat">✓ Réussi</span>' : ''}</div>
+    <p class="ch-nom">${esc(c.nom)}</p>
+    <p class="ch-but"><b>Objectif :</b> ${esc(c.objectif)}</p>
+    <p class="ch-aide">${c.trous ? 'Code à trous : remplace chaque <span class="trou-ex">___</span> par ce qui manque, puis lance. Sans limite de temps : ton robot s’arrête dès que l’objectif est atteint.' : 'À toi d’écrire le code, puis lance. Sans limite de temps : ton robot s’arrête dès que l’objectif est atteint.'}</p>
+    <ul class="ch-contraintes" id="contraintes"${c.haut ? '' : ' hidden'}></ul>
+    ${n > 1 ? `<p class="ch-version">Carte : version ${S.iv + 1} sur ${n}. Les obstacles changent : ton code doit réussir sur les ${n} versions. <button class="bouton petit" type="button" data-a="version">Version suivante</button></p>` : ''}
+    ${e ? `<div class="piste"><p><b>Piste 1 :</b> ${codeTxt(c.pistes[0])}</p>${e > 1 ? `<p><b>Piste 2 :</b> ${codeTxt(c.pistes[1])}</p>` : '<p class="sous">Une autre piste viendra au prochain essai raté.</p>'}</div>` : ''}
+    <div class="ligne" style="margin:6px 0 0"><button class="bouton petit" type="button" data-a="depart">${S.confirmeDepart ? 'Sûr·e ? Ton code sera remplacé' : 'Remettre le code de départ'}</button></div>`;
+  majContraintes();
+}
+function majContraintes() {
+  const el = $('contraintes'); if (!el || !S.ch.haut) return;
+  const k = contraintesDe(S.ch, ED.code());
+  el.innerHTML = `<li class="titre">Pour ce haut-fait :</li>` + k.map(x => `<li class="${x.ok === true ? 'ok' : x.ok === false ? 'non' : ''}">${x.ok === true ? '✓ ' : x.ok === false ? '✗ ' : ''}${esc(x.texte)}${x.detail ? ` <span class="sous">(${esc(x.detail)})</span>` : ''}</li>`).join('');
+}
+function majSuivi() {
+  const e = S.essai, c = S.infoCarte; if (!c) return;
+  const fait = e ? e.fait : c.buts.length ? 0 : c.cibles.filter(k => c.rows[Math.floor(k / W)][k % W] === 'K').length, total = c.buts.length ? 1 : c.cibles.length;
+  $('suivi').textContent = (c.buts.length ? (fait ? 'Drapeau atteint' : 'Drapeau pas encore atteint') : `${fait} case${fait > 1 ? 's' : ''} sur ${total} coloriée${fait > 1 ? 's' : ''}`) + ` · ${e ? e.actions : 0} action${e && e.actions > 1 ? 's' : ''}`;
+}
+function dessinerChallenge() {
+  const c = S.infoCarte, opt = { murs: S.murs, cibles: c.toutes ? null : c.cibles, buts: c.buts };
+  if (S.essai) { const f = S.essai.m.frames; PL.dessiner(f, Math.max(0, Math.min(S.fTick || 0, f.length - 1 + 3)), opt); return; }
+  const m = createMatch({ map: S.carte, code: { K: '', Z: '' }, solo: true }); PL.dessiner(m.frames, 0, { ...opt, path: S.apercu });
+}
+function majVitesse() {
+  const v = VITESSES[S.vitesse], r = $('vitesseRobot');
+  r.value = S.vitesse; r.setAttribute('aria-valuetext', `${v.nom} : ${v.txt}`); $('vitesseValeur').textContent = `${v.nom} (${v.txt})`;
+}
+function lancerChallenge() {
+  const code = ED.code(), t = trousDe(code);
+  if (t.length) return refuserTrous(t);
+  if (!S.valide) { dire('Corrige l’erreur avant de lancer.', 'mal'); return; }
+  const e = new Essai(S.ch, S.iv, code), id = ++S.run;
+  S.essai = e; S.fTick = 0; S.tPrec = performance.now(); S.vu = 0; S.etat = 'challenge'; conseil.vus = {}; ED.ligneErreur(0);
+  phase('En cours', 'duel'); dire('C’est parti ! Ton robot s’arrête dès que l’objectif est atteint. Tu peux changer ton code et l’envoyer en route.', 'bon', 3000);
+  majSuivi(); majBoutons(); requestAnimationFrame(t0 => boucleChallenge(id, t0));
+}
+function refuserTrous(t) {
+  const tr = t[0];
+  dire(`${t.length > 1 ? `Il reste ${t.length} trous à compléter. Le premier est` : 'Il reste un trou à compléter,'} ligne ${tr.ligne}${tr.question ? ` (« ${tr.question} »)` : ''} : remplace ___ par ce qui manque, puis lance.`, 'mal', 6000);
+  ED.selectionner(tr.ligne, tr.col, tr.long, true);
+}
+function envoyerChallenge() {
+  const code = ED.code(), t = trousDe(code), e = S.essai;
+  if (t.length) return refuserTrous(t);
+  if (!S.valide) { dire('Corrige l’erreur avant d’envoyer.', 'mal'); return; }
+  if (code === e.code) return;
+  if (!e.envoyer(code)) return;
+  dire('Code envoyé : ton robot repart de la ligne 1, là où il est. Pour valider le challenge, ton code devra réussir depuis le départ.', 'bon', 4000); majBoutons();
+}
+function boucleChallenge(id, maintenant) {
+  if (id !== S.run || S.etat !== 'challenge') return;
+  const e = S.essai, dt = Math.min(250, Math.max(0, maintenant - S.tPrec)); S.tPrec = maintenant;
+  S.fTick += dt * VITESSES[S.vitesse].tps / 1000;
+  while (!e.fin && e.m.t < Math.floor(S.fTick)) e.pas();
+  const f = e.m.frames;
+  for (; S.vu < f.length; S.vu++) for (const ev of f[S.vu].ev) if (ev.type === 'wall' && ev.who === 'K' && ev.n >= 2 && !e.fin) conseil('mur', 'Ton robot cogne un obstacle : il reste sur place. Change de direction, ou regarde avant d’avancer.');
+  ED.ligneEnCours(ED.code() === e.code && !e.m.P.K.done ? e.m.P.K.line : 0);
+  majSuivi(); dessiner(); majBoutons();
+  if (e.fin) { if (S.fTick >= e.m.t + 2.5 || e.fin.raison === 'arret') return finChallenge(e); S.fTick = Math.max(S.fTick, e.m.t); }
+  requestAnimationFrame(t => boucleChallenge(id, t));
+}
+function texteFin(e) {
+  const f = e.fin, c = e.c;
+  if (f.raison === 'fini') return `Ton programme est fini, mais l’objectif n’est pas atteint : ${c.buts.length ? 'ton robot n’est pas sur le drapeau' : `il reste ${e.reste} case${e.reste > 1 ? 's' : ''} à colorier`}.`;
+  if (f.raison === 'erreur') return `Ton code s’est arrêté, ligne ${f.err.ligne} : ${texteErreur(f.err)}. L’explication en français est sous ton code.`;
+  if (f.raison === 'cogne') return 'Ton robot a cogné un obstacle : ce haut-fait demande de ne jamais cogner. Regarde avant d’avancer, par exemple avec if not obstacleNord():';
+  if (f.raison === 'plafond') return `Ton robot a fait ${PLAFOND_ACTIONS} actions sans atteindre l’objectif : il est arrêté. Ton programme ne s’arrête jamais : une boucle sans fin ?`;
+  if (f.raison === 'immobile') return `Ton robot ne bouge plus depuis ${IMMOBILE_MAX} actions : il est arrêté. Il cogne un obstacle, ou ta boucle tourne sans le faire avancer : une boucle sans fin.`;
+  if (f.raison === 'rond') return `Ton robot tourne en rond : ${SANS_NOUVEAU_MAX} actions sans colorier une case nouvelle. Il est arrêté : ta boucle ne s’arrête pas et ne trouve plus de case à prendre.`;
+  return 'Ton robot est arrêté.';
+}
+function montrerErreur(err) {
+  const t = texteErreur(err), x = expliquer(t);
+  $('errTexte').textContent = `Ligne ${err.ligne || '?'}\n${t}`; $('errFr').hidden = true; $('errFrTexte').innerHTML = `<p>${esc(x.quoi)}</p><p><b>Pour corriger :</b> ${esc(x.faire)}</p>`;
+  $('errBouton').textContent = 'Expliquer en français'; $('erreur').hidden = false; ED.ligneErreur(err.ligne);
+}
+function finChallenge(e) {
+  S.etat = 'pret'; ED.ligneEnCours(0); const c = S.ch, f = e.fin;
+  const rate = () => { S.echecs[c.id] = (S.echecs[c.id] || 0) + 1; majConsigne(); };
+  if (f.raison === 'arret') { phase('Arrêté'); dire('Robot arrêté. Change ton code si tu veux, puis relance-le depuis le départ.', 'aide'); majBoutons(); return; }
+  if (!f.ok) { phase('Raté', 'mal'); rate(); if (f.raison === 'erreur') montrerErreur(f.err); dire(texteFin(e) + (S.echecs[c.id] <= 2 ? ' Une piste est apparue au-dessus de ton code.' : ''), 'mal'); majBoutons(); return; }
+  if (e.change) { phase('Presque'); dire('Objectif atteint, mais ton code a changé en route : relance-le depuis le départ pour valider le challenge.', 'aide'); majBoutons(); return; }
+  const non = contraintesNonTenues(c, e.code);
+  if (non.length) { phase('Presque'); rate(); dire('Objectif atteint, mais il manque une condition du haut-fait : ' + non.map(x => `${x.texte.charAt(0).toLowerCase() + x.texte.slice(1)} (${x.detail})`).join(' ; ') + '.', 'mal'); majBoutons(); return; }
+  const autre = versionQuiRate(c, e.code, S.iv);
+  if (autre) {
+    phase('Presque'); S.iv = autre.iv; S.essai = null; poserVersion(); rate();
+    dire(`Réussi sur cette version de la carte, mais pas sur la version ${autre.iv + 1} : ${texteFin(autre.essai).replace(/^Ton /, 'ton ').replace(/^Il /, 'il ')} La carte affichée est maintenant la version ${autre.iv + 1} : lance ton code dessus pour voir.`, 'mal');
+    majBoutons(); return;
+  }
+  reussite(e);
+}
+function reussite(e) {
+  const c = S.ch, p = progression(), avant = { base: baseFinie(), suivant: c.i + 1 < CHALLENGES.length && ouvert(CHALLENGES[c.i + 1]) }, nouveau = !p.reussis.includes(c.id);
+  if (nouveau) { p.reussis = CHALLENGES.map(x => x.id).filter(id => id === c.id || p.reussis.includes(id)); ecrireProgression(p); }
+  phase('Réussi', 'bon'); majFil(); majConsigne(); majBoutons(); dire(`${c.haut ? 'Haut-fait réussi' : 'Challenge réussi'} : ${c.nom}.`, 'bon');
+  let debloque = '';
+  if (!avant.base && baseFinie()) debloque = 'Les 5 hauts-faits sont ouverts : des challenges bonus, plus difficiles. Choisis celui que tu veux.';
+  else if (!c.haut && !avant.suivant && c.i + 1 < 5) debloque = `${nomChallenge(CHALLENGES[c.i + 1])}, « ${CHALLENGES[c.i + 1].nom} », est ouvert.`;
+  const suivant = CHALLENGES.find(x => x.i > c.i && ouvert(x) && !reussi(x.id)) || CHALLENGES.find(x => ouvert(x) && !reussi(x.id));
+  const k = contraintesDe(c, e.code).filter(x => x.id !== 'sansCogner' || e.m.P.K.stats.blocked === 0), n = c.cartes.length, lignes = lignesDeCode(e.code);
+  ouvrir(`<h2 class="res">${c.haut ? 'Haut-fait réussi !' : 'Challenge réussi !'}</h2>
+    <p class="sous">${esc(nomChallenge(c))} · ${esc(c.nom)} : objectif atteint en ${e.actions} action${e.actions > 1 ? 's' : ''}${n > 1 ? `, et ton code réussit sur les ${n} versions de la carte` : ''}. Ton code : ${lignes} ligne${lignes > 1 ? 's' : ''}.</p>
+    ${c.haut ? `<ul class="ch-contraintes">${k.map(x => `<li class="ok">✓ ${esc(x.texte)}</li>`).join('')}</ul>` : ''}
+    <div class="conseil"><b>Ce que tu as appris :</b> ${codeTxt(c.appris)}</div>
+    ${debloque ? `<p><b>Débloqué !</b> ${esc(debloque)}</p>` : ''}
+    ${suivant ? '' : '<p><b>Les 10 challenges sont réussis !</b> Mesure-toi maintenant à Zéro, le robot de l’ordinateur.</p>'}
+    <p class="sous" id="progEnLigne">${Comptes.progressionEnLigne && Comptes.session ? 'Ta progression est gardée sur cet appareil, et en ligne avec ton code élève…' : 'Ta progression est gardée sur cet appareil.'}</p>
+    <div class="ligne">${Comptes.actif ? '<button class="bouton" data-a="garderMien">Garder mon code</button>' : ''}<button class="bouton" data-a="rejouer">Recommencer</button>${suivant ? `<button class="bouton fort" data-a="suivant">${esc(nomChallenge(suivant))} →</button>` : '<button class="bouton fort" data-a="zero">Défier Zéro</button>'}</div>`, a => {
+    if (a === 'garderMien') return mesCodes({ nom: 'Mon code · ' + c.nom, texte: e.code });
+    if (a === 'rejouer') { fermer(); S.essai = null; pret(); }
+    if (a === 'suivant') { fermer(); choisirChallenge(suivant.i); pret(); }
+    if (a === 'zero') { fermer(); entrer('zero'); }
+  });
+  synchroniser().then(ok => { const el = $('progEnLigne'); if (el && ok) el.textContent = 'Ta progression est gardée sur cet appareil, et en ligne avec ton code élève.'; });
+}
+// La progression en ligne (avec un code élève, si la base la garde) : une seule fonction réunit l'appareil et la base.
+async function synchroniser() {
+  if (!Comptes.progressionEnLigne || !Comptes.session) return false;
+  const p = progression(); let r;
+  try { r = await Comptes.progression(p.reussis); }
+  catch (e) { dire('Pas de connexion à la base : ta progression reste gardée sur cet appareil. Elle partira en ligne la prochaine fois.', 'aide', 6000); return false; }
+  if (!r || !r.ok) { dire(((r && r.message) || 'La base n’a pas gardé ta progression.') + ' Ta progression reste gardée sur cet appareil.', 'aide', 6000); majBoutons(); return false; }
+  reunir(r.reussis); return true;
+}
+function reunir(enLigne) { // un challenge réussi quelque part compte partout
+  if (!Array.isArray(enLigne)) return;
+  const q = progression(), avant = q.reussis.length;
+  q.reussis = CHALLENGES.map(c => c.id).filter(id => q.reussis.includes(id) || enLigne.includes(id));
+  if (q.reussis.length === avant) return;
+  ecrireProgression(q);
+  if (S.mode === 'solo' && S.ch) { majFil(); majConsigne(); dire(`Ta progression en ligne est réunie à celle de cet appareil : ${q.reussis.length} challenge${q.reussis.length > 1 ? 's' : ''} réussi${q.reussis.length > 1 ? 's' : ''} sur ${CHALLENGES.length}.`, 'bon', 4000); }
 }
 function carteZero() { const g = 1 + Math.floor(Math.random() * 9999), c = carteDeManche(g, S.zLv + 1); poserCarte(c.rows, c.nom, 'Carte tirée au hasard.'); }
 
@@ -67,19 +235,28 @@ function verifier(code) {
 }
 function texteErreur(e) { return `${e.type || 'Error'}: ${e.msg || e.message}`; }
 function majCode() {
-  const code = ED.code(); stock.ecrire('code', code);
-  const v = verifier(code); S.valide = v.ok;
+  const code = ED.code(), solo = S.mode === 'solo' && S.ch;
+  if (solo) { const p = progression(); p.codes[S.ch.id] = code; ecrireProgression(p); } else stock.ecrire('code', code);
+  // à l'entraînement, un code à trous n'est pas exécuté pour vérifier : ses ___ ne sont pas des erreurs de Python
+  const v = solo && trousDe(code).length ? (() => { try { parse(code); return { ok: true }; } catch (e) { return { ok: false, err: e }; } })() : verifier(code); S.valide = v.ok;
   if (!v.ok) {
     const e = v.err, t = texteErreur(e), x = expliquer(t);
     $('errTexte').textContent = `Ligne ${e.ligne || '?'}\n${t}`; $('errFr').hidden = true; $('errFrTexte').innerHTML = `<p>${esc(x.quoi)}</p><p><b>Pour corriger :</b> ${esc(x.faire)}</p>`;
     $('errBouton').textContent = 'Expliquer en français'; $('erreur').hidden = false; ED.ligneErreur(e.ligne);
   } else { $('erreur').hidden = true; ED.ligneErreur(0); if (!v.vide) S.dernierValide = code; }
   const rep = countRep(code), periode = 3 + rep;
-  $('vitesse').innerHTML = rep ? `<span class="lent">${rep} ligne${rep > 1 ? 's' : ''} recopiée${rep > 1 ? 's' : ''} : ton robot fait une action toutes les <b>${(periode / 10).toFixed(1).replace('.', ',')} s</b>.</span> Une boucle évite de recopier et rend ton robot plus rapide.` : `Ton robot fait une action toutes les <b>0,3 s</b> (aucune ligne recopiée).`;
+  if (solo) $('vitesse').innerHTML = rep ? `<span class="lent">${rep} ligne${rep > 1 ? 's' : ''} recopiée${rep > 1 ? 's' : ''} : en match, ton robot ferait une action toutes les <b>${(periode / 10).toFixed(1).replace('.', ',')} s</b>.</span> Une boucle évite de recopier.` : 'En match, ton robot ferait une action toutes les <b>0,3 s</b> (aucune ligne recopiée).';
+  else $('vitesse').innerHTML = rep ? `<span class="lent">${rep} ligne${rep > 1 ? 's' : ''} recopiée${rep > 1 ? 's' : ''} : ton robot fait une action toutes les <b>${(periode / 10).toFixed(1).replace('.', ',')} s</b>.</span> Une boucle évite de recopier et rend ton robot plus rapide.` : `Ton robot fait une action toutes les <b>0,3 s</b> (aucune ligne recopiée).`;
+  if (solo) { if (S.etat === 'pret' && S.essai) { S.essai = null; phase('Prêt·e'); majSuivi(); } majContraintes(); }
   majBoutons(); majApercu();
 }
 function majApercu() {
   S.apercu = null;
+  if (S.mode === 'solo' && S.ch) {
+    const code = ED.code();
+    if (!S.essai && S.etat === 'pret' && S.valide !== false && code.trim() && !trousDe(code).length) { try { S.apercu = apercuChallenge(S.ch, S.iv, code, 30); } catch (e) {} }
+    if (!S.essai) dessiner(); return;
+  }
   if (!S.partie && S.carte && S.valide !== false && (S.etat === 'pret' || S.etat === 'ecriture') && ED) {
     const code = ED.code(); if (code.trim()) { try { S.apercu = preview(S.carte, S.moi === 'Z' && S.mode !== 'solo' ? 'Z' : 'K', code, 24); } catch (e) {} }
   }
@@ -90,6 +267,12 @@ function majApercu() {
 function majBoutons() {
   const go = $('go');
   go.disabled = false;
+  $('stop').hidden = $('reset').hidden = !(S.mode === 'solo' && S.etat === 'challenge');
+  if (S.mode === 'solo' && (S.etat === 'pret' || S.etat === 'challenge')) {
+    if (S.etat === 'challenge') { const change = ED.code() !== S.essai.code; go.textContent = change ? 'Envoyer le code (Ctrl + Entrée)' : 'Code envoyé'; go.disabled = !change || !S.valide; }
+    else { go.textContent = S.essai ? 'Relancer depuis le départ' : 'Lancer'; go.disabled = !S.valide || !ED.code().trim(); }
+    $('bCodes').hidden = !Comptes.actif; return;
+  }
   if (S.etat === 'pret') { go.textContent = S.mode === 'solo' ? 'Lancer (30 s)' : 'Lancer le match'; go.disabled = !S.valide || !ED.code().trim(); }
   else if (S.etat === 'ecriture') { go.textContent = 'Je suis prêt·e'; go.disabled = !S.valide; }
   else if (S.etat === 'attente') { go.textContent = 'En attente de l’adversaire…'; go.disabled = true; }
@@ -99,16 +282,25 @@ function majBoutons() {
   $('bCodes').hidden = !Comptes.actif;
 }
 function action() {
-  if (S.etat === 'pret') return S.mode === 'solo' ? lancerSolo() : S.mode === 'zero' ? ecriture(60, () => lancerZero()) : null;
+  if (S.etat === 'pret') return S.mode === 'solo' ? lancerChallenge() : S.mode === 'zero' ? ecriture(60, () => lancerZero()) : null;
+  if (S.etat === 'challenge') return envoyerChallenge();
   if (S.etat === 'ecriture') return S.finEcriture && S.finEcriture();
   if (S.etat === 'duel' || S.etat === 'solo') return envoyer();
 }
 
 /* ---------- les modes ---------- */
 function entrer(mode) {
+  const venaitDeLEntrainement = !!S.ch; // (rejoindreSalle change S.mode avant d'appeler entrer)
   S.mode = mode; fermer(); $('jeu').hidden = false; S.partie = null; S.moi = 'K'; S.hote = false;
-  $('adv').hidden = true; $('consigne').hidden = false; $('choixCarte').hidden = mode !== 'solo'; $('nomAdv').hidden = mode === 'solo';
-  if (mode === 'solo') { $('mode').textContent = 'Entraînement · seul·e sur la carte'; $('choixNiveau').hidden = true; choisirCarte(S.carteI); pret(); }
+  $('adv').hidden = true; $('consigne').hidden = false; $('fil').hidden = mode !== 'solo'; $('nomAdv').hidden = mode === 'solo';
+  const entr = mode === 'solo'; $('jeu').classList.toggle('entrainement', entr); $('curseur').hidden = !entr; $('suivi').hidden = !entr; $('legende').hidden = !entr;
+  $('plateau').setAttribute('aria-label', entr ? 'Le plateau du challenge : ton robot en cyan, les cases à colorier entourées de pointillés jaunes, la case à atteindre marquée d’un drapeau jaune' : 'Le plateau : ton robot est en bas, en cyan');
+  if (!entr) { S.run++; S.essai = null; S.infoCarte = null; S.ch = null; }
+  // une carte de challenge n'a pas de départ pour l'adversaire : hors de l'entraînement, on repart de la première carte
+  if (venaitDeLEntrainement && !entr) poserCarte(carte(0), CARTES[0].nom, CARTES[0].idee);
+  // en quittant l'entraînement, un code à trous ne passe pas en match : on reprend le dernier code des matchs
+  if (venaitDeLEntrainement && !entr && trousDe(ED.code()).length) { const g = stock.lire('code'); ED.remplacer(codeGardeValable(g) && !trousDe(g).length ? g : CODE_DEPART); clearTimeout(init.t); }
+  if (mode === 'solo') { $('mode').textContent = 'Entraînement · 10 challenges'; $('choixNiveau').hidden = true; choisirChallenge(premierAFaire()); pret(); synchroniser(); }
   if (mode === 'zero') { $('mode').textContent = 'Défi contre Zéro'; $('choixNiveau').hidden = false; $('niveau').value = S.zLv; carteZero(); pret(); }
   if (mode === 'salle') { $('mode').textContent = 'Duel en direct'; $('choixNiveau').hidden = true; }
   ED.focus();
@@ -116,12 +308,8 @@ function entrer(mode) {
 function pret() {
   S.etat = 'pret'; S.partie = null; phase('Prêt·e'); chrono(null); score(0, 0); ED.ligneEnCours(0);
   if (S.mode === 'solo') {
-    if (S.carteI === HASARD) { $('consigne').innerHTML = `<b>${esc(S.nomCarte)}</b> · colorie le plus de cases possible en 30 s. ${esc(S.ideeCarte)}`; }
-    else {
-      const c = CARTES[S.carteI], o = OBJECTIFS[c.id], meil = (stock.lire('etoiles') || {})[c.id] || 0;
-      $('consigne').innerHTML = `<b>${esc(c.nom)}</b> · colorie le plus de cases possible en 30 s. ${esc(c.idee)}<div class="etoiles">${o.map((n, i) => `<span class="${meil > i ? 'ok' : ''}">${'★'.repeat(i + 1)} ${n} cases</span>`).join('')}</div>`;
-    }
-    dire('Écris ton code, puis lance. Tu peux le changer pendant les 30 s : il repart de la ligne 1.');
+    S.run++; S.essai = null; majConsigne(); majSuivi(); majFil();
+    dire(S.ch.trous ? 'Complète les trous (en jaune), puis lance. Tu peux changer ton code en route : il repart de la ligne 1.' : 'Écris ton code, puis lance. Tu peux le changer en route : il repart de la ligne 1.');
   } else if (S.mode === 'zero') {
     const z = ZERO[S.zLv]; S.advNom = 'Zéro'; S.advId = null;
     $('consigne').innerHTML = `<b>${esc(S.nomCarte)}</b> · contre Zéro, niveau ${S.zLv + 1} (${esc(z.nom)}). Le robot qui a le plus de cases au bout de 30 s gagne. <b>1 minute</b> pour écrire, puis le duel. Le nord est en haut de ton écran.`;
@@ -134,11 +322,6 @@ function ecriture(secondes, fin) {
   S.finEcriture = () => { if (fini) return; if (!S.valide) { dire('Corrige l’erreur avant de lancer.', 'mal'); return; } fini = true; S.finEcriture = null; fin(); };
   const tic = () => { if (fini || S.etat !== 'ecriture') return; const r = Math.ceil((t1 - performance.now()) / 1000); chrono(r); if (r <= 0) { clearTimeout(init.t); majCode(); if (!S.valide) { ED.remplacer(S.dernierValide || CODE_DEPART); clearTimeout(init.t); majCode(); if (!S.valide) { ED.remplacer(CODE_DEPART); clearTimeout(init.t); majCode(); } dire('Ton code avait une erreur : ton robot part avec ton dernier code correct.', 'mal', 4000); } S.finEcriture(); return; } setTimeout(tic, 250); };
   tic(); majBoutons(); majApercu(); dire(`Tu as ${secondes} s pour écrire ton code. « Je suis prêt·e » pour lancer plus tôt.`);
-}
-function lancerSolo() {
-  if (!S.valide) return;
-  S.partie = new Partie({ carte: S.carte, codeK: ED.code(), codeZ: '', solo: true, seed: 1 });
-  demarrer('solo');
 }
 function lancerZero() {
   S.partie = new Partie({ carte: S.carte, codeK: ED.code(), codeZ: ZERO[S.zLv].code, seed: 1 + Math.floor(Math.random() * 1e6) });
@@ -213,16 +396,7 @@ function finir() {
   S.etat = 'fin'; phase('Fini'); chrono(0); ED.ligneEnCours(0); majBoutons();
   const code = p.codeActuel(S.moi);
   let titre, plus = '', boutons = '', copieEntiere = false;
-  if (S.mode === 'solo') {
-    if (S.carteI === HASARD) { titre = `${moi} cases`; plus = '<p>Une autre carte au hasard, ou une des 6 cartes à étoiles ?</p>'; boutons = '<button class="bouton" data-a="rejouer">Rejouer</button><button class="bouton fort" data-a="autre">Autre carte</button>'; }
-    else {
-      const c = CARTES[S.carteI], o = OBJECTIFS[c.id], n = o.filter(x => moi >= x).length, et = stock.lire('etoiles') || {};
-      if (n > (et[c.id] || 0)) { et[c.id] = n; stock.ecrire('etoiles', et); }
-      titre = n ? `${'★'.repeat(n)} ${moi} cases !` : `${moi} cases`;
-      plus = n < 3 ? `<p>Prochaine étoile : ${o[n]} cases. ${esc(PISTES_ETOILES[n])}</p>` : '<p>Les 3 étoiles ! Essaie la carte suivante, ou un défi contre Zéro.</p>';
-      boutons = `<button class="bouton" data-a="rejouer">Rejouer</button>${S.carteI < CARTES.length - 1 ? '<button class="bouton fort" data-a="suivante">Carte suivante</button>' : '<button class="bouton fort" data-a="zero">Défier Zéro</button>'}`;
-    }
-  } else {
+  {
     const r = moi > lui ? 'Gagné !' : moi < lui ? 'Perdu' : 'Égalité';
     titre = `${r} ${moi} cases contre ${lui}`;
     if (S.mode === 'zero') {
@@ -250,8 +424,6 @@ function finir() {
     if (a === 'copier' || a === 'editeur' || a === 'garder') return actionCode(a, advCode, 'Code de ' + S.advNom);
     if (a === 'garderMien') return mesCodes({ nom: S.nomCarte ? 'Mon code · ' + S.nomCarte : 'Mon code', texte: code });
     if (a === 'rejouer') { fermer(); pret(); }
-    if (a === 'suivante') { fermer(); choisirCarte(S.carteI + 1); pret(); }
-    if (a === 'autre') { fermer(); choisirCarte(HASARD); pret(); }
     if (a === 'suivant') { fermer(); carteZero(); pret(); }
     if (a === 'zero') { fermer(); entrer('zero'); }
     if (a === 'fermer') { fermer(); attendreManche(); }
@@ -377,6 +549,7 @@ async function mesCodes(aGarder = null) {
   ouvrir('<h2>Mes codes</h2><p class="sous">Chargement…</p>');
   let r; try { r = await Comptes.reprise(); } catch (e) { r = { ok: false, message: e.message }; }
   if (!r.ok) { if (!Comptes.session) return monCode(aGarder, r.message); ouvrir(`<h2>Mes codes</h2><p class="message mal">${esc(r.message)}</p><div class="ligne"><button class="bouton fort" data-a="ok">Fermer</button></div>`, () => fermer()); return; }
+  if (Comptes.progressionEnLigne && Array.isArray(r.reussis)) { reunir(r.reussis); if (progression().reussis.some(id => !r.reussis.includes(id))) synchroniser(); }
   const progs = r.programmes || [], nomDefaut = aGarder ? aGarder.nom : '';
   ouvrir(`<h2>Mes codes</h2>
     <p class="sous">${esc(r.pseudo)} · ton code élève : <code id="monCodeEleve" class="code-eleve" data-code="${esc(r.code_affiche)}">${esc(r.code_affiche.replace(/-.*$/, '-•••••-•••'))}</code> <button class="bouton petit" data-a="voir">Afficher</button><br>Ce code suffit pour retrouver tes programmes sur n’importe quel ordinateur. Garde-le pour toi.</p>
@@ -384,7 +557,7 @@ async function mesCodes(aGarder = null) {
     <div class="ligne"><input type="text" id="nomProg" maxlength="40" value="${esc(nomDefaut)}" placeholder="Serpent, chasseur…" style="flex:1;min-width:180px"><button class="bouton fort" data-a="garder">Garder</button></div>
     <p id="codesMsg" class="message" role="status"></p>
     ${progs.length ? `<ul class="programmes">${progs.map((p, i) => `<li><span><b>${esc(p.nom)}</b><small>${esc(new Date(p.modifie_le).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' }))} · ${p.texte.split('\n').length} ligne${p.texte.split('\n').length > 1 ? 's' : ''}</small></span><button class="bouton petit" data-a="charger" data-i="${i}">Dans mon éditeur</button><button class="bouton petit" data-a="suppr" data-i="${i}" aria-label="Supprimer ${esc(p.nom)}">Supprimer</button></li>`).join('')}</ul>` : '<p class="sous">Aucun programme gardé pour l’instant.</p>'}
-    <p class="sous">${progs.length} programme${progs.length > 1 ? 's' : ''} sur 30 au plus.</p>
+    <p class="sous">${progs.length} programme${progs.length > 1 ? 's' : ''} sur 30 au plus.${Comptes.progressionEnLigne ? ` Ta progression à l’entraînement est gardée aussi : ${progression().reussis.length} challenge${progression().reussis.length > 1 ? 's' : ''} réussi${progression().reussis.length > 1 ? 's' : ''} sur ${CHALLENGES.length}.` : ''}</p>
     <div class="ligne"><button class="bouton petit" data-a="pasmoi">Ce n’est pas moi</button><button class="bouton petit" data-a="effacer">Effacer mes données</button><button class="bouton fort" data-a="ok" style="margin-left:auto">Fermer</button></div>`, async (a, b) => {
     const msg = (t, c = '') => { $('codesMsg').textContent = t; $('codesMsg').className = 'message ' + c; };
     if (a === 'voir') { const c = $('monCodeEleve'); const vu = c.textContent === c.dataset.code; c.textContent = vu ? c.dataset.code.replace(/-.*$/, '-•••••-•••') : c.dataset.code; b.textContent = vu ? 'Afficher' : 'Masquer'; }
@@ -401,35 +574,35 @@ async function mesCodes(aGarder = null) {
     }
     if (a === 'pasmoi') { Comptes.oublier(); fermer(); dire('Ce poste a oublié ton code. Tu pourras entrer de nouveau avec ton code.', 'aide', 4000); majBoutons(); }
     if (a === 'effacer') {
-      if (b.dataset.sur !== '1') { b.dataset.sur = '1'; b.textContent = 'Tout effacer, pour de bon ?'; msg('Ton compte et tous tes programmes seront effacés. Clique encore pour confirmer.', 'aide'); return; }
-      try { await Comptes.effacer(); } catch (e) { return msg(e.message, 'mal'); } fermer(); dire('Ton compte et tes programmes sont effacés.', 'aide', 4000);
+      if (b.dataset.sur !== '1') { b.dataset.sur = '1'; b.textContent = 'Tout effacer, pour de bon ?'; msg(Comptes.progressionEnLigne ? 'Ton compte, tous tes programmes et ta progression en ligne seront effacés. Clique encore pour confirmer.' : 'Ton compte et tous tes programmes seront effacés. Clique encore pour confirmer.', 'aide'); return; }
+      try { await Comptes.effacer(); } catch (e) { return msg(e.message, 'mal'); } fermer(); dire(Comptes.progressionEnLigne ? 'Ton compte, tes programmes et ta progression en ligne sont effacés. Ta progression reste sur cet appareil.' : 'Ton compte et tes programmes sont effacés.', 'aide', 4000);
     }
     if (a === 'ok') fermer();
   });
 }
 function monCode(aGarder = null, message = '') { // entrer avec son code, ou en créer un
   ouvrir(`<h2>Ton code élève</h2>
-    <p class="sous">Avec ton code (2 mots et 3 chiffres, par exemple PINCE-DIODE-482), tu gardes tes programmes en ligne et tu les retrouves sur n’importe quel ordinateur.</p>
+    <p class="sous">Avec ton code (2 mots et 3 chiffres, par exemple PINCE-DIODE-482), tu gardes tes programmes${Comptes.progressionEnLigne ? ' et ta progression' : ''} en ligne et tu les retrouves sur n’importe quel ordinateur.</p>
     ${message ? `<p class="message mal">${esc(message)}</p>` : ''}
     <div class="choix">
       <div class="carte-choix" style="cursor:default"><b>J’ai déjà un code</b><label class="sr" for="codeEleve">Ton code</label><div class="ligne"><input type="text" id="codeEleve" maxlength="40" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="PINCE-DIODE-482" style="flex:1;min-width:170px;text-transform:uppercase"><button class="bouton fort petit" data-a="entrer">Entrer</button></div></div>
       <div class="carte-choix" style="cursor:default"><b>Je n’ai pas encore de code</b><label for="pseudoCode">Ton prénom ou un pseudo (jamais ton nom de famille)</label><div class="ligne"><input type="text" id="pseudoCode" maxlength="24" autocomplete="off" value="${esc(S.pseudo)}" style="flex:1;min-width:150px"><button class="bouton petit" data-a="creer">Créer mon code</button></div></div>
     </div>
     <p id="codeMsg" class="message" role="status"></p>
-    <p class="sous">Ce qui est gardé : ton prénom ou ton pseudo, ton code et tes programmes, effacés 12 mois après ta dernière visite. Tu peux tout effacer avant, depuis « Mes codes ».</p>
+    <p class="sous">Ce qui est gardé : ton prénom ou ton pseudo, ton code et tes programmes${Comptes.progressionEnLigne ? ', et la liste des challenges que tu as réussis' : ''}, effacés 12 mois après ta dernière visite. Tu peux tout effacer avant, depuis « Mes codes ».</p>
     <div class="ligne"><button class="bouton" data-a="ok">Plus tard</button></div>`, async (a, b) => {
     const msg = (t, c = 'mal') => { $('codeMsg').textContent = t; $('codeMsg').className = 'message ' + c; };
     if (a === 'entrer') {
       const c = lireCodeEleve($('codeEleve').value); if (!c.ok) return msg(c.message);
       b.disabled = true; let r; try { r = await Comptes.entrer($('codeEleve').value); } catch (e) { r = { ok: false, message: e.message }; } b.disabled = false;
       if (!r.ok) return msg(r.message);
-      S.pseudo = r.pseudo; stock.ecrire('pseudo', r.pseudo); majBoutons(); mesCodes(aGarder);
+      S.pseudo = r.pseudo; stock.ecrire('pseudo', r.pseudo); majBoutons(); if (Comptes.progressionEnLigne) { reunir(r.reussis); synchroniser(); } mesCodes(aGarder);
     }
     if (a === 'creer') {
       const ps = $('pseudoCode').value.trim(); if (ps.length < 2) return msg('Écris un prénom ou un pseudo (2 lettres au moins).');
       b.disabled = true; let r; try { r = await Comptes.creer(ps); } catch (e) { r = { ok: false, message: e.message }; } b.disabled = false;
       if (!r.ok) return msg(r.message);
-      S.pseudo = r.pseudo; stock.ecrire('pseudo', r.pseudo); majBoutons(); noterCode(r.code_affiche, aGarder);
+      S.pseudo = r.pseudo; stock.ecrire('pseudo', r.pseudo); majBoutons(); synchroniser(); noterCode(r.code_affiche, aGarder);
     }
     if (a === 'ok') fermer();
   });
@@ -459,14 +632,14 @@ function accueil() {
     <label for="pseudo"><b>Ton prénom ou un pseudo</b> (jamais ton nom de famille)</label>
     <div class="ligne"><input type="text" id="pseudo" maxlength="24" autocomplete="off" value="${esc(S.pseudo)}" style="flex:1;min-width:200px"></div>
     <div class="choix">
-      <button class="carte-choix" data-a="solo"><b>S’entraîner</b><span>Seul·e sur 6 cartes, de plus en plus difficiles. 3 étoiles par carte.</span></button>
+      <button class="carte-choix" data-a="solo"><b>S’entraîner</b><span>10 challenges sans limite de temps : 5 de base, puis 5 hauts-faits.${(n => n ? ` ${n} réussi${n > 1 ? 's' : ''} sur 10.` : '')(progression().reussis.length)}</span></button>
       <button class="carte-choix" data-a="zero"><b>Défier Zéro</b><span>Le robot de l’ordinateur, sur une carte tirée au hasard. Il progresse quand tu le bats.</span></button>
       <div class="carte-choix" style="cursor:default"><b>Rejoindre une salle</b><span>Le code de 4 lettres donné en classe.</span><div class="ligne"><input type="text" id="codeSalle" maxlength="9" placeholder="ABCD" value="${esc(code || '')}" style="width:110px;text-transform:uppercase" aria-label="Code de la salle"><button class="bouton fort petit" data-a="rejoindre">Entrer</button></div></div>
       <button class="carte-choix" data-a="defi"><b>Défier un·e camarade</b><span>Crée une salle à deux et donne son code.</span></button>
     </div>
-    ${Comptes.actif ? `<p class="sous" style="margin:12px 0 0">${s ? `Connecté·e avec ton code élève (${esc(s.pseudo)}).` : 'Avec un code élève, tu gardes tes programmes en ligne.'} <button class="bouton petit" data-a="codes">${s ? 'Mes codes' : 'Mon code élève'}</button></p>` : ''}
+    ${Comptes.actif ? `<p class="sous" style="margin:12px 0 0">${s ? `Connecté·e avec ton code élève (${esc(s.pseudo)}).` : `Avec un code élève, tu gardes tes programmes${Comptes.progressionEnLigne ? ' et ta progression' : ''} en ligne.`} <button class="bouton petit" data-a="codes">${s ? 'Mes codes' : 'Mon code élève'}</button></p>` : ''}
     <p id="accErr" class="message mal"></p>
-    <p class="sous" style="margin:8px 0 0"><a href="memo.html">Mémo à imprimer</a> · ${Comptes.actif ? 'Ton pseudo et ton code de robot passent aux élèves de ta salle ; seul ton code élève garde tes programmes en ligne.' : 'Rien n’est enregistré en ligne : ton pseudo et ton code ne passent qu’aux élèves de ta salle.'}</p>`, a => {
+    <p class="sous" style="margin:8px 0 0"><a href="memo.html">Mémo à imprimer</a> · ${Comptes.actif ? `Ton pseudo et ton code de robot passent aux élèves de ta salle ; seul ton code élève garde tes programmes${Comptes.progressionEnLigne ? ' et ta progression' : ''} en ligne.` : 'Rien n’est enregistré en ligne : ton pseudo et ton code ne passent qu’aux élèves de ta salle.'}</p>`, a => {
     const ps = $('pseudo').value.trim();
     if (a === 'codes') { if (ps.length >= 2) { S.pseudo = ps; stock.ecrire('pseudo', ps); } return mesCodes(); }
     if (ps.length < 2) { $('accErr').textContent = 'Écris un prénom ou un pseudo (2 lettres au moins).'; $('pseudo').focus(); return; }
@@ -482,8 +655,9 @@ function memo() {
   ouvrir(`<div class="memo"><h2>Mémo</h2>
     <h3>Les actions</h3>${dl(MOTS.actions)}<h3>Les capteurs</h3>${dl(MOTS.capteurs)}<h3>Les mots de Python</h3>${dl(MOTS.mots_cles)}
     <h3>Exemples</h3><pre>${colorer('for i in range(4):\n    nord()\nest()')}</pre><pre>${colorer('while True:\n    while not obstacleNord():\n        nord()\n    est()\n    while not obstacleSud():\n        sud()\n    est()')}</pre>
-    <h3>Les règles</h3><p>30 s de match. Le robot qui a le plus de cases gagne. Une case de l’adversaire sur laquelle tu passes devient la tienne. Le nord est toujours en haut de ton écran. Chaque ligne recopiée ralentit ton robot : une boucle évite de recopier.</p>
-    <h3>Au clavier</h3><p>Tab décale la ligne vers la droite, Maj + Tab vers la gauche. Échap puis Tab sort de l’éditeur. Ctrl + Entrée lance ou envoie le code.</p>
+    <h3>L’entraînement</h3><p>10 challenges sans limite de temps : 5 de base, ouverts l’un après l’autre, puis 5 hauts-faits, plus difficiles, ouverts quand les 5 de base sont réussis. Les premiers donnent une carte seule ; les suivants, un code à trous : remplace chaque ___ (en jaune) par ce qui manque. Ton robot s’arrête dès que l’objectif est atteint, ou quand ton programme est fini ; une boucle sans fin est arrêtée. Après un essai raté, une piste apparaît. Le curseur règle la vitesse du robot, sans changer le résultat. Ta progression est gardée sur cet appareil${Comptes.progressionEnLigne ? ', et en ligne si tu as un code élève' : ''}.</p>
+    <h3>Les règles des matchs</h3><p>30 s de match. Le robot qui a le plus de cases gagne. Une case de l’adversaire sur laquelle tu passes devient la tienne. Le nord est toujours en haut de ton écran. Chaque ligne recopiée ralentit ton robot : une boucle évite de recopier.</p>
+    <h3>Au clavier</h3><p>Tab décale la ligne vers la droite, Maj + Tab vers la gauche. Échap puis Tab sort de l’éditeur. Ctrl + Entrée lance ou envoie le code. Le curseur de vitesse se règle avec les flèches.</p>
     <div class="ligne"><a class="bouton" href="memo.html" target="_blank" rel="noopener">Mémo à imprimer</a><button class="bouton fort" data-a="ok">Fermer</button></div></div>`, () => fermer());
 }
 
@@ -516,15 +690,36 @@ function init() {
   $('errBouton').onclick = () => { const v = $('errFr').hidden; $('errFr').hidden = !v; $('errBouton').textContent = v ? 'Masquer l’explication' : 'Expliquer en français'; };
   $('onglets').onclick = e => { const b = e.target.closest('button'); if (!b) return; if (b.dataset.o) { ongletOutil = b.dataset.o; outils(); } if (b.dataset.d) ED.decaler(+b.dataset.d); };
   $('mots').onclick = e => { const b = e.target.closest('.mot'); if (!b) return; const [t, bloc] = OUTILS[ongletOutil][+b.dataset.i]; ED.inserer(t, { bloc: !!bloc }); };
-  $('carte').innerHTML = CARTES.map((c, i) => `<option value="${i}">${i + 1}. ${esc(c.nom)}</option>`).join('') + `<option value="${HASARD}">7. Carte au hasard (sans étoiles)</option>`;
-  $('carte').onchange = () => { if (S.etat === 'pret' || S.etat === 'fin') { const v = $('carte').value; choisirCarte(v === HASARD ? HASARD : +v); pret(); } };
+  // l'entraînement : le fil des 10 challenges, la consigne, le curseur de vitesse, Arrêter et Recommencer
+  $('fil').onclick = e => {
+    const b = e.target.closest('[data-c]'); if (!b) return; const c = CHALLENGES[+b.dataset.c];
+    if (!ouvert(c)) { dire(c.haut ? 'Les hauts-faits s’ouvrent quand les 5 challenges de base sont réussis.' : `${nomChallenge(c)} s’ouvre quand tu as réussi le challenge ${c.rang - 1}.`, 'aide', 4000); return; }
+    if (c.i === S.chI && S.etat !== 'challenge') return;
+    choisirChallenge(c.i); pret(); b.blur(); const n = $('fil').querySelector(`[data-c="${c.i}"]`); if (n) n.focus();
+  };
+  $('consigne').onclick = e => {
+    const b = e.target.closest('[data-a]'); if (!b || S.mode !== 'solo') return;
+    if (b.dataset.a === 'version') { S.run++; S.etat = 'pret'; S.iv = (S.iv + 1) % S.ch.cartes.length; poserVersion(); pret(); const v = $('consigne').querySelector('[data-a="version"]'); if (v) v.focus(); }
+    if (b.dataset.a === 'depart') {
+      if (!S.confirmeDepart) { S.confirmeDepart = true; majConsigne(); const d = $('consigne').querySelector('[data-a="depart"]'); if (d) d.focus(); return; }
+      S.confirmeDepart = false; S.run++; S.etat = 'pret'; ED.remplacer(S.ch.code); clearTimeout(init.t); pret();
+      const t = trousDe(ED.code()); if (t.length) ED.selectionner(t[0].ligne, t[0].col, t[0].long, true); else ED.focus();
+      dire('Le code de départ est de retour.', 'aide', 3000);
+    }
+  };
+  S.vitesse = Math.max(0, Math.min(VITESSES.length - 1, +stock.lire('vitesse', 1) || 0));
+  $('vitesseRobot').max = VITESSES.length - 1;
+  $('vitesseRobot').oninput = () => { S.vitesse = +$('vitesseRobot').value; stock.ecrire('vitesse', S.vitesse); majVitesse(); };
+  majVitesse();
+  $('stop').onclick = () => { if (S.etat === 'challenge' && S.essai) S.essai.arreter(); };
+  $('reset').onclick = () => { if (S.etat !== 'challenge') return; S.run++; S.etat = 'pret'; S.essai = null; lancerChallenge(); };
   $('niveau').innerHTML = ZERO.map((z, i) => `<option value="${i}">Zéro ${i + 1} · ${esc(z.nom)}</option>`).join('');
   $('niveau').onchange = () => { if (S.etat === 'pret' || S.etat === 'fin') { S.zLv = +$('niveau').value; carteZero(); pret(); } };
   $('bMemo').onclick = memo; $('bAccueil').onclick = () => { if (S.etat === 'duel' && !confirmerQuitter()) return; accueil(); };
   $('voile').onclick = e => { if (e.target === $('voile') && S.etat !== 'accueil') { fermer(); if (S.etat === 'fin' && S.mode === 'salle') attendreManche(); } };
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('voile').hidden && S.etat !== 'accueil') fermer(); });
   new ResizeObserver(ajusterPlateau).observe($('scene'));
-  outils(); choisirCarte(0); majCode(); accueil();
+  outils(); poserCarte(carte(0), CARTES[0].nom, CARTES[0].idee); majCode(); accueil();
 }
 function confirmerQuitter() { dire('Un match est en cours : termine-le avant de revenir à l’accueil.', 'aide'); return false; }
 window.addEventListener('DOMContentLoaded', init);
