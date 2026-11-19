@@ -65,7 +65,7 @@ Le code de départ est `for i in range(8): nord()` : il marche tout de suite, ma
 
 ## L'entraînement : 10 challenges
 
-Sans limite de temps : le robot s'arrête dès que l'objectif est atteint, ou quand le programme est fini. **5 challenges de base**, ouverts l'un après l'autre, puis **5 hauts-faits**, des challenges bonus plus difficiles, ouverts quand les 5 de base sont réussis. On va d'une ligne droite à couvrir toute la carte avec des obstacles : les deux premiers donnent une carte seule, les suivants un **code à trous** à compléter (les trous `___` sont surlignés en jaune, et le jeu ne lance pas tant qu'il en reste un).
+Sans limite de temps : le robot s'arrête dès que l'objectif est atteint, ou quand le programme est fini. **5 challenges de base**, ouverts l'un après l'autre, puis **5 hauts-faits**, des challenges bonus plus difficiles, ouverts quand les 5 de base sont réussis. On va d'une ligne droite à couvrir toute la carte avec des obstacles. Les challenges 1 et 2 donnent une carte seule, les challenges 3 à 5 un **code à trous** à compléter (les trous `___` sont surlignés en jaune, et le jeu ne lance pas tant qu'il en reste un) ; les hauts-faits alternent : ★ 1, ★ 3 et ★ 5 une carte seule, ★ 2 et ★ 4 un code à trous.
 
 | | Challenge | Objectif | Ce qui est donné | Notion |
 |---|---|---|---|---|
@@ -80,7 +80,7 @@ Sans limite de temps : le robot s'arrête dès que l'objectif est atteint, ou qu
 | ★ 4 | Les créneaux | Colorier 3 créneaux de plus en plus hauts, **avec une fonction, en 12 lignes au plus** | Code à trous | Une fonction avec un paramètre : `def creneau(h):` |
 | ★ 5 | La grotte | Colorier toute la grotte, **avec une fonction, en 12 lignes au plus** | Carte seule | Une fonction pour couvrir toute la carte |
 
-Quand une carte a 3 versions, le code doit réussir sur les 3 : un trajet appris par cœur ne suffit pas, il faut un capteur. Après un essai raté, une **piste** s'affiche, puis une seconde, plus précise ; un challenge réussi dit **ce qu'on a appris**. Une boucle sans fin est arrêtée et expliquée en français (le robot ne bouge plus, tourne en rond, ou a fait 600 actions). On peut changer son code en route, comme en match ; pour valider, le code doit réussir depuis le départ. **Arrêter** et **Recommencer** sont toujours là, et un **curseur règle la vitesse du robot** (lente, normale, rapide, très rapide) : il ne change que l'affichage, jamais le résultat.
+Quand une carte a 3 versions, le code doit réussir sur les 3 : un trajet appris par cœur ne suffit pas, il faut un capteur. Après un essai raté, un **indice** s'affiche, puis un second, plus précis ; un challenge réussi dit **ce qu'on a appris**. Une boucle sans fin est arrêtée et expliquée en français (le robot ne bouge plus, tourne en rond, ou a fait 600 actions). On peut changer son code en route, comme en match ; pour valider, le code doit réussir depuis le départ. Pendant que le robot joue, **Arrêter** le stoppe et **Recommencer** le relance depuis le départ ; le **curseur de vitesse du robot** (lente, normale, rapide, très rapide), lui, reste toujours affiché : il ne change que l'affichage, jamais le résultat.
 
 ## Pour quels usages
 
@@ -120,7 +120,7 @@ L'entraînement et le défi contre Zéro marchent sans réseau : seules la salle
 |---|---|
 | [Mémo à imprimer](https://babash.github.io/court-circuit/memo.html) | Les actions, les capteurs, l'essentiel sur `for` et `while`, trois exercices et un bilan « Je sais… » |
 | [config.js](config.js) | Le projet Supabase des salles ; pour ta copie, mets le tien, ou laisse l'adresse vide pour le mode démo |
-| [js/challenges.js](js/challenges.js) | Les 10 challenges : cartes, objectifs, codes à trous, pistes et contraintes |
+| [js/challenges.js](js/challenges.js) | Les 10 challenges : cartes, objectifs, codes à trous, indices et contraintes |
 | [supabase/](supabase/LISEZMOI.md) | Le code élève, les programmes gardés et la progression : les migrations, leurs inverses et le mode d'emploi |
 | [Les bibliothèques incluses](vendor/LICENCES-BIBLIOTHEQUES.txt) | CodeMirror 6, Supabase Realtime, QR Code Generator, avec leurs licences |
 
