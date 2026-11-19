@@ -57,7 +57,7 @@ function poserCarte(rows, nom = '', idee = '') {
 }
 
 /* ---------- l'entraînement : 10 challenges sans limite de temps ---------- */
-// La progression, sur l'appareil (le même stock qu'avant ; l'ancienne clé « etoiles » n'est plus lue) :
+// La progression, sur l'appareil, gardée 30 jours après sa dernière écriture (stock.jours, dans reseau.js ; l'ancienne clé « etoiles » n'est plus lue) :
 // { reussis: [identifiants], codes: { identifiant: le dernier code de l'élève pour ce challenge } }
 function progression() {
   const p = stock.lire('challenges') || {}, connus = new Set(CHALLENGES.map(c => c.id));
@@ -655,7 +655,7 @@ function memo() {
   ouvrir(`<div class="memo"><h2>Mémo</h2>
     <h3>Les actions</h3>${dl(MOTS.actions)}<h3>Les capteurs</h3>${dl(MOTS.capteurs)}<h3>Les mots de Python</h3>${dl(MOTS.mots_cles)}
     <h3>Exemples</h3><pre>${colorer('for i in range(4):\n    nord()\nest()')}</pre><pre>${colorer('while True:\n    while not obstacleNord():\n        nord()\n    est()\n    while not obstacleSud():\n        sud()\n    est()')}</pre>
-    <h3>L’entraînement</h3><p>10 challenges sans limite de temps : 5 de base, ouverts l’un après l’autre, puis 5 hauts-faits, plus difficiles, ouverts quand les 5 de base sont réussis. Les premiers donnent une carte seule ; les suivants, un code à trous : remplace chaque ___ (en jaune) par ce qui manque. Ton robot s’arrête dès que l’objectif est atteint, ou quand ton programme est fini ; une boucle sans fin est arrêtée. Après un essai raté, une piste apparaît. Le curseur règle la vitesse du robot, sans changer le résultat. Ta progression est gardée sur cet appareil${Comptes.progressionEnLigne ? ', et en ligne si tu as un code élève' : ''}.</p>
+    <h3>L’entraînement</h3><p>10 challenges sans limite de temps : 5 de base, ouverts l’un après l’autre, puis 5 hauts-faits, plus difficiles, ouverts quand les 5 de base sont réussis. Les premiers donnent une carte seule ; les suivants, un code à trous : remplace chaque ___ (en jaune) par ce qui manque. Ton robot s’arrête dès que l’objectif est atteint, ou quand ton programme est fini ; une boucle sans fin est arrêtée. Après un essai raté, une piste apparaît. Le curseur règle la vitesse du robot, sans changer le résultat. Ta progression (les challenges réussis et ton dernier code de chacun) est gardée sur cet appareil 30 jours après ton dernier entraînement${Comptes.progressionEnLigne ? ', et en ligne si tu as un code élève' : ''}.</p>
     <h3>Les règles des matchs</h3><p>30 s de match. Le robot qui a le plus de cases gagne. Une case de l’adversaire sur laquelle tu passes devient la tienne. Le nord est toujours en haut de ton écran. Chaque ligne recopiée ralentit ton robot : une boucle évite de recopier.</p>
     <h3>Au clavier</h3><p>Tab décale la ligne vers la droite, Maj + Tab vers la gauche. Échap puis Tab sort de l’éditeur. Ctrl + Entrée lance ou envoie le code. Le curseur de vitesse se règle avec les flèches.</p>
     <div class="ligne"><a class="bouton" href="memo.html" target="_blank" rel="noopener">Mémo à imprimer</a><button class="bouton fort" data-a="ok">Fermer</button></div></div>`, () => fermer());

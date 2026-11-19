@@ -83,7 +83,7 @@ const Comptes = (() => {
 
 /* Mode démo : les mêmes fonctions que la base, imitées sur cet appareil (rien ne part en ligne). */
 const Imitation = (() => {
-  // comme le reste de l'appareil, la base imitée est oubliée un jour après sa création
+  // comme le jeton de session, la base imitée est oubliée un jour après sa création
   const CLE = 'court-circuit-demo:base', JOUR = 24 * 3600 * 1000;
   const lire = () => {
     try {

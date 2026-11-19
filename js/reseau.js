@@ -2,10 +2,13 @@
    Rien n'est enregistré en ligne : une salle est un canal temps réel de Supabase (diffusion et présence).
    Mode démo (?demo, ou sans configuration) : la salle passe entre les onglets de ce navigateur. */
 
-// Stockage de l'appareil : un jour au plus (postes partagés), comme Lagon Arena et Gombessa.
+// Stockage de l'appareil (postes partagés) : un jour au plus, comme Lagon Arena et Gombessa.
+// Une seule exception, décidée par l'enseignant le 19/11 : la progression des challenges (la clé « challenges » :
+// les challenges réussis et le dernier code de chacun) reste 30 jours après sa dernière écriture.
 const stock = {
+  jours: { challenges: 30 }, // la durée de garde, en jours ; toutes les autres clés : 1 jour
   lire(k, defaut = null) { try { const v = JSON.parse(localStorage.getItem('court-circuit:' + k)); if (!v || v.fin < Date.now()) return defaut; return v.val; } catch (e) { return defaut; } },
-  ecrire(k, val) { try { localStorage.setItem('court-circuit:' + k, JSON.stringify({ val, fin: Date.now() + 864e5 })); } catch (e) {} },
+  ecrire(k, val) { try { localStorage.setItem('court-circuit:' + k, JSON.stringify({ val, fin: Date.now() + (stock.jours[k] || 1) * 864e5 })); } catch (e) {} },
   oublier() { try { Object.keys(localStorage).filter(k => k.startsWith('court-circuit:')).forEach(k => localStorage.removeItem(k)); } catch (e) {} },
 };
 
