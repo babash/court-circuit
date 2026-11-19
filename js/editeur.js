@@ -1,6 +1,7 @@
 /* Court-circuit : l'éditeur de code (CodeMirror 6, embarqué dans vendor/editeur.js).
    Règle 20 : coloration, indentation automatique et touche Tab, guides d'indentation,
-   autocomplétion contextuelle (en français aussi), erreur affichée telle quelle puis expliquée. */
+   autocomplétion contextuelle (en français aussi), erreur affichée telle quelle puis expliquée.
+   À l'entraînement, les trous d'un code à trous (___) sont surlignés en jaune. */
 function creerEditeur(parent, { doc = '', onChange = () => {}, onEnvoi = null, lectureSeule = false } = {}) {
   const CMx = window.CM;
   const poseLigne = CMx.StateEffect.define(), poseErreur = CMx.StateEffect.define();
@@ -17,6 +18,14 @@ function creerEditeur(parent, { doc = '', onChange = () => {}, onEnvoi = null, l
     provide: f => CMx.EditorView.decorations.from(f),
   });
   const champRun = decoLigne('run'), champErr = decoLigne('err');
+  // les trous d'un code à trous (___, hors des commentaires) : bien visibles, en jaune
+  const marqueTrou = CMx.Decoration.mark({ class: 'cm-trou', attributes: { title: 'Un trou : remplace-le par ce qui manque' } });
+  const trous = d => {
+    const out = [];
+    for (let n = 1; n <= d.lines; n++) { const l = d.line(n), t = l.text.replace(/#.*$/, ''); for (const m of t.matchAll(/_{3,}/g)) out.push(marqueTrou.range(l.from + m.index, l.from + m.index + m[0].length)); }
+    return CMx.Decoration.set(out);
+  };
+  const champTrous = CMx.StateField.define({ create: st => trous(st.doc), update: (deco, tr) => tr.docChanged ? trous(tr.state.doc) : deco, provide: f => CMx.EditorView.decorations.from(f) });
 
   const T = CMx.tags;
   const style = CMx.HighlightStyle.define([
@@ -41,6 +50,8 @@ function creerEditeur(parent, { doc = '', onChange = () => {}, onEnvoi = null, l
     '.cm-selectionBackground, &.cm-focused .cm-selectionBackground, ::selection': { backgroundColor: 'rgba(103,232,249,.28) !important' },
     '.cm-run': { backgroundColor: 'rgba(250,204,21,.20)' },
     '.cm-err': { backgroundColor: 'rgba(248,113,113,.18)', boxShadow: 'inset 3px 0 #F87171' },
+    '.cm-trou, .cm-trou span': { color: '#FDE047', fontWeight: '700' },
+    '.cm-trou': { backgroundColor: '#3B2F07', outline: '1px dashed #FACC15', outlineOffset: '-1px', borderRadius: '3px' },
     '.cm-tooltip': { backgroundColor: '#172136', border: '1px solid #2C3954', color: '#F1F3F7' },
     '.cm-tooltip-autocomplete > ul > li': { padding: '3px 8px', fontFamily: "'JetBrains Mono', monospace" },
     '.cm-tooltip-autocomplete > ul > li[aria-selected]': { backgroundColor: '#0E7490', color: '#fff' },
@@ -133,7 +144,7 @@ function creerEditeur(parent, { doc = '', onChange = () => {}, onEnvoi = null, l
       CMx.syntaxHighlighting(style), theme,
       CMx.indentationMarkers({ thickness: 2, colors: { light: '#3A4866', dark: '#3A4866', activeLight: '#67E8F9', activeDark: '#67E8F9' } }),
       CMx.autocompletion({ override: [source], activateOnTyping: true, icons: false }),
-      champRun, champErr,
+      champRun, champErr, champTrous,
       CMx.keymap.of([...envoyer, { key: 'Tab', run: CMx.acceptCompletion }, ...CMx.closeBracketsKeymap, ...CMx.completionKeymap, CMx.indentWithTab, ...CMx.defaultKeymap, ...CMx.historyKeymap]),
       CMx.EditorView.updateListener.of(u => { if (u.docChanged) onChange(u.state.doc.toString()); }),
       CMx.EditorView.contentAttributes.of({ 'aria-label': 'Ton code Python', autocapitalize: 'off', autocorrect: 'off', spellcheck: 'false' }),
@@ -146,6 +157,12 @@ function creerEditeur(parent, { doc = '', onChange = () => {}, onEnvoi = null, l
     code: () => view.state.doc.toString(),
     remplacer(txt) { view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: txt } }); },
     focus: () => view.focus(),
+    // sélectionne un passage (un trou) : ce que l'élève tape le remplace
+    selectionner(ligne, col, long, focus = false) {
+      const d = view.state.doc; if (ligne < 1 || ligne > d.lines) return;
+      const l = d.line(ligne), a = Math.min(l.to, l.from + col), b = Math.min(l.to, a + long);
+      view.dispatch({ selection: { anchor: a, head: b }, scrollIntoView: true }); if (focus) view.focus();
+    },
     ligneEnCours(n) { view.dispatch({ effects: poseLigne.of(n || 0) }); },
     ligneErreur(n) { view.dispatch({ effects: poseErreur.of(n || 0) }); },
     inserer(txt, { bloc = false } = {}) {

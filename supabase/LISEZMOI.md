@@ -1,6 +1,6 @@
-# Court-circuit : le code de l'élève et ses programmes gardés
+# Court-circuit : le code de l'élève, ses programmes gardés et sa progression
 
-Ce dossier contient les migrations de la base de Court-circuit. Le jeu lui-même n'en a pas besoin : les duels passent par les canaux temps réel de Supabase, sans table. Ces fichiers servent seulement au **code élève** et à **« Mes codes »** : un·e élève qui le veut garde ses programmes en ligne et les retrouve sur n'importe quel ordinateur avec son code (règle 21).
+Ce dossier contient les migrations de la base de Court-circuit. Le jeu lui-même n'en a pas besoin : les duels passent par les canaux temps réel de Supabase, sans table. Ces fichiers servent seulement au **code élève**, à **« Mes codes »** et à **la progression de l'entraînement** : un·e élève qui le veut garde ses programmes et la liste des challenges réussis en ligne, et les retrouve sur n'importe quel ordinateur avec son code (règle 21 : on n'enregistre qu'un pseudo ou un prénom, et la progression).
 
 - **Le projet :** `cukahpyqkljiddmimpyi` (« Babash - applications »), la base unique des applications du site.
 - **Le schéma :** `court_circuit`, que l'API n'expose pas. Les fonctions d'entrée sont dans `public`, avec le préfixe `cc_`.
@@ -10,15 +10,19 @@ Ce dossier contient les migrations de la base de Court-circuit. Le jeu lui-même
 
 ## Où en est la base
 
-**La migration est appliquée**, après l'accord de l'enseignant sur le SQL exact (« Ok base Court-circuit », 13/11/2026 à 06:45, heure de Mayotte ; règle M4) : `court_circuit_0001_codes_eleves`, le 13/11 à 06:48 (version 20261113034818), par le chef d'orchestre, sans les lignes `begin;` et `commit;`. Le texte enregistré a la même empreinte que ce fichier (md5 sans commentaires, espaces ni `;` : `f2a0459a…`) : **le fichier de ce dossier est exactement celui qui a été appliqué**. Vérifié aussitôt par les métadonnées seulement : 4 tables sous RLS, sans règle ni droit ; le schéma fermé à `anon` et à `authenticated` ; les 6 fonctions d'entrée `cc_…` appelables par `anon` seul, les 4 fonctions internes par personne ; 64 mots ; 0 compte. Ensuite seulement, `config.js` passe à `COMPTES: true` (règle M7 : la page n'appelle que des fonctions qui existent).
+**0002 (la progression) n'est pas encore appliquée.** L'enseignant a donné son accord sans relire le SQL (« Fais le sans ma validation je te fais confiance », 19/11/2026 à 11:57, heure de Mayotte) : l'Architecte relit `0002-progression.sql`, le chef d'orchestre l'applique par `apply_migration` sous le nom `court_circuit_0002_progression`, puis le Gardien vérifie la base (ci-dessous) avant de publier `PROGRESSION_EN_LIGNE: true`. D'ici là, la page n'appelle pas `cc_progression` (règle M7) et la progression reste sur l'appareil.
+
+**0001 est appliquée**, après l'accord de l'enseignant sur le SQL exact (« Ok base Court-circuit », 13/11/2026 à 06:45, heure de Mayotte ; règle M4) : `court_circuit_0001_codes_eleves`, le 13/11 à 06:48 (version 20261113034818), par le chef d'orchestre, sans les lignes `begin;` et `commit;`. Le texte enregistré a la même empreinte que ce fichier (md5 sans commentaires, espaces ni `;` : `f2a0459a…`) : **le fichier de ce dossier est exactement celui qui a été appliqué**. Vérifié aussitôt par les métadonnées seulement : 4 tables sous RLS, sans règle ni droit ; le schéma fermé à `anon` et à `authenticated` ; les 6 fonctions d'entrée `cc_…` appelables par `anon` seul, les 4 fonctions internes par personne ; 64 mots ; 0 compte. Ensuite seulement, `config.js` passe à `COMPTES: true` (règle M7 : la page n'appelle que des fonctions qui existent).
 
 ## Les fichiers
 
 | Fichier | Nom de migration (`apply_migration`) | Ce qu'il fait |
 |---|---|---|
 | `0001-codes-eleves.sql` | `court_circuit_0001_codes_eleves` | Crée le schéma `court_circuit`, ses 4 tables, 4 fonctions internes et 6 fonctions d'entrée. Ne modifie rien d'existant. |
-| `0001-codes-eleves-inverse.sql` | `court_circuit_0001_codes_eleves_inverse` | Retire tout. **Efface les comptes et les programmes des élèves.** |
-| `schema.sql` | — | Le script complet, pour la copie d'un·e collègue (après le socle commun du dépôt du site). |
+| `0001-codes-eleves-inverse.sql` | `court_circuit_0001_codes_eleves_inverse` | Retire tout. **Efface les comptes et les programmes des élèves.** Refuse de partir tant que 0002 est appliquée : défaire 0002 d'abord. |
+| `0002-progression.sql` | `court_circuit_0002_progression` | Ajoute la progression de l'entraînement : une colonne dans `court_circuit.eleves`, un champ `reussis` dans `cc_connexion` et `cc_reprise`, et la fonction `cc_progression`. Ne retire ni ne renomme rien. |
+| `0002-progression-inverse.sql` | `court_circuit_0002_progression_inverse` | Retire la fonction et la colonne, et remet `cc_connexion`, `cc_reprise` et les commentaires exactement comme 0001. **Efface la progression des élèves** (les comptes et les programmes restent). |
+| `schema.sql` | — | Le script complet, pour la copie d'un·e collègue (après le socle commun du dépôt du site) : 0001 puis 0002, recopiées telles quelles. Il s'installe dans un projet neuf. |
 
 Chaque fichier commence par `begin;` et finit par `commit;`, chacun sur sa ligne : il se colle d'un bloc dans l'éditeur SQL. Par `apply_migration`, on retire seulement ces deux lignes.
 
@@ -52,12 +56,25 @@ Chaque fonction borne ses paramètres et répond `{ "ok": false, "message": … 
 
 **Ce qui n'y est pas encore** (suite de la règle 21) : le code enseignant·e et la liste des codes de ses élèves, les classes. La page de la salle de classe reste sans compte.
 
+## Ce que change 0002 : la progression de l'entraînement
+
+| Objet | Ce qui change |
+|---|---|
+| `court_circuit.eleves.challenges_reussis` | Une colonne `text[]`, vide au départ : les challenges et les hauts-faits réussis, sous forme d'identifiants de la liste connue (`ligne`, `escalier`, `mur`, `montee`, `tondeuse`, `slalom`, `serpent`, `stalactites`, `creneaux`, `grotte`), 10 au plus, **sans date**. La contrainte `eleves_challenges_reussis_connus` refuse toute autre valeur. **Données d'élèves**, effacées avec le compte. |
+| Le commentaire de `court_circuit.eleves` | Il cite la progression. Le registre des tables (une vue du catalogue) n'a pas besoin de migration : la table reste « Données d'élèves : oui ». |
+| `cc_connexion(p_code)` et `cc_reprise(p_jeton)` | Le même résultat, plus un champ : `reussis`, la liste des challenges réussis. Rien n'est retiré ni renommé : la page publiée avant 0002 marche encore. |
+| `cc_progression(p_jeton, p_reussis)` | **Nouvelle**, appelable par `anon` seulement (`security definer`, `search_path` vide). Elle réunit la liste reçue à celle de la base, sans jamais la réduire (un challenge réussi quelque part compte partout), et répond `{ "ok": true, "reussis": [...] }`. Une liste fausse (un identifiant inconnu, plus de 10 valeurs, une valeur vide, un tableau à deux dimensions) est refusée : `{ "ok": false, "message": … }`. Une liste vide renvoie seulement la progression gardée. |
+
+« Effacer mes données » (`cc_effacer_moi`) et le ménage des comptes sans visite depuis 12 mois effacent la ligne de l'élève : la progression part avec elle, sans rien changer à ces fonctions.
+
+**Côté page**, tout est derrière le réglage `PROGRESSION_EN_LIGNE` de `config.js`, `false` tant que 0002 n'est pas appliquée (règle M7). Avec `true` et un code élève : à la connexion, à la reprise et à l'ouverture de l'entraînement, la page réunit la progression de l'appareil et celle de la base ; chaque challenge réussi part aussitôt ; sans réseau, elle le dit en français et garde la progression sur l'appareil ; si la session a expiré, elle l'oublie et demande d'entrer de nouveau son code. Sans code élève, rien ne change : la progression reste sur l'appareil.
+
 ## Appliquer
 
-1. L'enseignant lit `0001-codes-eleves.sql` et donne son accord.
-2. Le chef d'orchestre l'applique par `apply_migration`, sous le nom `court_circuit_0001_codes_eleves`, sans les lignes `begin;` et `commit;`.
+1. L'enseignant lit `0001-codes-eleves.sql` et donne son accord. Pour `0002-progression.sql`, il a donné son accord par avance (19/11, 11:57) ; l'Architecte relit le SQL.
+2. Le chef d'orchestre l'applique par `apply_migration`, sous le nom `court_circuit_0001_codes_eleves` (puis `court_circuit_0002_progression`), sans les lignes `begin;` et `commit;`.
 3. Le Gardien vérifie par les métadonnées (ci-dessous) et l'inscrit au journal.
-4. Ensuite seulement, `COMPTES: true` dans `config.js`, dans une branche publiée par le Gardien.
+4. Ensuite seulement, `COMPTES: true` (puis `PROGRESSION_EN_LIGNE: true`) dans `config.js`, dans une branche publiée par le Gardien. Pour 0002, c'est le dernier commit de la branche de T93 : si l'application était retardée, le Gardien n'aurait qu'à le retirer.
 
 ## Vérifier, sans lire aucune donnée
 
@@ -71,15 +88,22 @@ from pg_class c where c.relnamespace = 'court_circuit'::regnamespace and c.relki
 -- le schéma fermé (attendu : false, false)
 select has_schema_privilege('anon', 'court_circuit', 'usage'), has_schema_privilege('authenticated', 'court_circuit', 'usage');
 
--- les fonctions appelables par anon (attendu : les 6 fonctions cc_, et aucune pour authenticated)
+-- les fonctions appelables par anon (attendu : les 6 fonctions cc_, 7 après 0002 avec cc_progression, et aucune pour authenticated)
 select p.proname, has_function_privilege('anon', p.oid, 'execute') as anon, has_function_privilege('authenticated', p.oid, 'execute') as authenticated
 from pg_proc p where p.pronamespace = 'public'::regnamespace and p.proname like 'cc\_%';
 
 -- les mots (attendu : 64) et les comptes (attendu : 0 juste après l'application)
 select (select count(*) from court_circuit.mots) as mots, (select count(*) from court_circuit.eleves) as comptes;
+
+-- après 0002 : la colonne, sa contrainte, et la fonction (attendu : une ligne, f, f, t, {"search_path=\"\""})
+select a.attname, has_column_privilege('anon', a.attrelid, a.attname, 'select, update') as anon,
+  has_column_privilege('authenticated', a.attrelid, a.attname, 'select, update') as authenticated,
+  exists (select 1 from pg_constraint c where c.conrelid = a.attrelid and c.conname = 'eleves_challenges_reussis_connus') as contrainte,
+  (select proconfig from pg_proc where oid = 'public.cc_progression(uuid, text[])'::regprocedure) as reglage
+from pg_attribute a where a.attrelid = 'court_circuit.eleves'::regclass and a.attname = 'challenges_reussis';
 ```
 
-Puis les conseillers (`get_advisors`) : seuls « RLS sans règle » (0008) et « security definer appelable par anon » (0028) pour les 6 fonctions `cc_` sont attendus.
+Puis les conseillers (`get_advisors`) : seuls « RLS sans règle » (0008) et « security definer appelable par anon » (0028) pour les 6 fonctions `cc_` (7 après 0002) sont attendus.
 
 ## L'essai local
 
@@ -91,14 +115,34 @@ La migration a été essayée sur un PostgreSQL 16 local (rôles `anon`, `authen
 - le tirage : 5 000 codes tous différents, chaque mot tiré 59 à 99 fois, chaque centaine de chiffres 469 à 545 fois ;
 - le plafond de 30 programmes, les tailles (nom vide, texte de 4 001 caractères), le ménage d'un compte vu il y a 13 mois, une fois par heure au plus.
 
+### L'essai local de 0002 (T93, 19/11/2026)
+
+Sur la même reproduction (PostgreSQL 16, rôles de l'API, socle commun du site, puis 0001), avec des comptes inventés, jamais sur la base en ligne, 53 contrôles réussis :
+- 0002 appliquée sur une base qui a déjà des comptes et un programme, puis relancée sans erreur ; les autres colonnes des comptes ne changent pas ; la progression part vide ;
+- les droits : 7 fonctions `cc_` appelables par `anon` seul, aucune par `authenticated` ni par `public` ; `cc_progression` en `security definer` avec un `search_path` vide ; le schéma, les 4 tables (RLS, aucune règle) et la colonne restent fermés à `anon` et à `authenticated` ; en `anon`, la lecture de la table, l'écriture de la colonne et les fonctions internes sont refusées ;
+- en `anon` : la progression gardée et rangée dans l'ordre des challenges, réunie sans jamais être réduite, la liste vide, les doublons ; 7 valeurs fausses refusées (identifiant inconnu, valeur vide, liste vide de PostgreSQL, tableau à deux dimensions, 11 valeurs, majuscules, espace) sans rien changer ; un jeton inconnu : « Ta session a expiré » ; écrites à la main en `postgres`, une valeur inconnue, 11 valeurs ou `null` sont refusées par la table ;
+- `cc_connexion` et `cc_reprise` renvoient `reussis` en plus de leurs champs ;
+- « Effacer mes données » et le ménage d'un compte vu il y a 13 mois effacent aussi la progression ;
+- l'inverse de 0001 refuse de partir tant que 0002 est appliquée ; **l'inverse de 0002 remet exactement le schéma d'avant** (`pg_dump` du schéma `court_circuit` et de `public` identiques), garde les programmes, et se relance sans effet ; 0002 se réapplique ensuite ;
+- 0002 refuse de partir sans 0001, et dans un autre rôle que `postgres` ;
+- `schema.sql`, lancé sur une base neuve, donne exactement le même schéma que 0001 puis 0002 (`pg_dump` identiques).
+
+Comme pour 0001, les copies essayées n'avaient pas les mots `, maintain` (PostgreSQL 16).
+
 ## Revenir en arrière
 
+Pour 0002 seulement (la progression) :
+1. `PROGRESSION_EN_LIGNE: false` dans `config.js`, publié : la page n'appelle plus `cc_progression` (règles M6 et M7).
+2. Si l'enseignant veut garder la progression, il exporte d'abord `court_circuit.eleves` (règle M8). L'export reste hors du dépôt.
+3. `0002-progression-inverse.sql`, par `apply_migration`, sous le nom `court_circuit_0002_progression_inverse`.
+
+Pour tout retirer : d'abord 0002 comme ci-dessus, puis :
 1. `COMPTES: false` dans `config.js`, publié : la page n'appelle plus les fonctions (règles M6 et M7 : on retire en deux temps, la page d'abord).
 2. Si l'enseignant veut garder les programmes des élèves, il exporte d'abord `court_circuit.eleves` et `court_circuit.programmes` (Table Editor, export ; règle M8). L'export reste hors du dépôt.
-3. `0001-codes-eleves-inverse.sql`, par `apply_migration`, sous le nom `court_circuit_0001_codes_eleves_inverse`.
+3. `0001-codes-eleves-inverse.sql`, par `apply_migration`, sous le nom `court_circuit_0001_codes_eleves_inverse`. Il refuse de partir tant que 0002 est appliquée.
 
 ## Installer sa copie (un·e collègue)
 
 1. Créer son projet Supabase (gratuit), y lancer `supabase/schema.sql` du dépôt du site, [`babash/Babash-NSI-SNT`](https://github.com/babash/Babash-NSI-SNT) (le socle commun), puis `schema.sql` de ce dossier.
-2. Mettre l'adresse de son projet et sa clé publique dans `config.js`, avec `COMPTES: true`.
+2. Mettre l'adresse de son projet et sa clé publique dans `config.js`, avec `COMPTES: true` et `PROGRESSION_EN_LIGNE: true`.
 3. Garder la même liste de mots, pour que les codes restent lisibles partout.

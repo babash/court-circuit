@@ -1,6 +1,7 @@
 /* Les cartes : 9 colonnes, 10 lignes, symétriques par demi-tour. K part en bas, Z en haut.
-   Les 6 cartes de l'entraînement vont de la plus simple à la plus riche ;
-   en duel, la carte est tirée au hasard (genererCarte), de plus en plus chargée au fil des manches. */
+   Les 6 cartes fixes vont de la plus simple à la plus riche : la salle de classe peut en choisir une ;
+   en duel, la carte est tirée au hasard (genererCarte), de plus en plus chargée au fil des manches.
+   Les cartes de l'entraînement, elles, sont celles des challenges (js/challenges.js). */
 const CARTES = [
   { id: 'piste', nom: 'La piste', idee: 'Une boucle for suffit : for i in range(8): nord()', rows: [
     '.........', '....Z....', '.........', '.........', '.........', '.........', '.........', '.........', '....K....', '.........'] },

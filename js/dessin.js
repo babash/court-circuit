@@ -1,4 +1,5 @@
-/* Dessin du plateau : cases, peinture électrique, caisses, robots, éclairs.
+/* Dessin du plateau : cases, peinture électrique, caisses, robots, éclairs
+   (et, à l'entraînement seulement, les cases à colorier et la case à atteindre).
    creerPlateau(canvas) renvoie un objet qui dessine une partie ; vue.retourne place le joueur du haut en bas, en cyan. */
 const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const COL = { K: '#22D3EE', Z: '#FF5CA8' }, DARK = { K: '#0B5568', Z: '#8E1450' }, FILL = { 1: 'rgba(34,211,238,', 2: 'rgba(255,92,168,' };
@@ -71,6 +72,18 @@ function bolt(x0, y0, x1, y1, col, a, seed) {
   }
   ctx.globalAlpha = 1;
 }
+// entraînement : une case à colorier (pointillés jaunes) et une case à atteindre (un drapeau jaune)
+function aColorier(x, y) {
+  const px = VX(x) * C, py = VY(y) * C, m = C * .14;
+  ctx.strokeStyle = '#FACC15'; ctx.lineWidth = Math.max(1.5, C * .06); ctx.setLineDash([C * .12, C * .09]);
+  rr(px + m, py + m, C - 2 * m, C - 2 * m, C * .12); ctx.stroke(); ctx.setLineDash([]);
+}
+function drapeau(x, y) {
+  const px = VX(x) * C, py = VY(y) * C;
+  ctx.strokeStyle = '#FACC15'; ctx.lineWidth = Math.max(1.5, C * .06); rr(px + C * .1, py + C * .1, C * .8, C * .8, C * .14); ctx.stroke();
+  ctx.fillStyle = '#FACC15'; ctx.fillRect(px + C * .34, py + C * .22, Math.max(1.5, C * .06), C * .56);
+  ctx.beginPath(); ctx.moveTo(px + C * .38, py + C * .22); ctx.lineTo(px + C * .74, py + C * .34); ctx.lineTo(px + C * .38, py + C * .48); ctx.closePath(); ctx.fill();
+}
 const ANG = d => d * Math.PI / 2;
 function dessiner(frames, p, opt = {}) {
   if (!ctx || !frames.length) return; FLIP = !!opt.retourne; if (opt.murs) WALLS = opt.murs;
@@ -82,6 +95,8 @@ function dessiner(frames, p, opt = {}) {
     if (c) { const fresh = prev.paint[k] !== c && i > 0; painted(x, y, c, fresh && !RM ? Math.min(1, .35 + fr * .65) : 1); }
   }
   for (const [k, w] of (f.cr || [])) caisse(k % W, Math.floor(k / W), w);
+  if (opt.cibles) for (const k of opt.cibles) if (f.paint[k] !== 1) aColorier(k % W, Math.floor(k / W));
+  if (opt.buts) for (const k of opt.buts) drapeau(k % W, Math.floor(k / W));
   if (opt.path && opt.path.length > 1) {
     ctx.strokeStyle = 'rgba(34,211,238,.85)'; ctx.lineWidth = Math.max(2, C * .08); ctx.setLineDash([C * .16, C * .12]); ctx.lineCap = 'round';
     ctx.beginPath(); opt.path.forEach(([x, y], j) => j ? ctx.lineTo((VX(x) + .5) * C, (VY(y) + .5) * C) : ctx.moveTo((VX(x) + .5) * C, (VY(y) + .5) * C)); ctx.stroke(); ctx.setLineDash([]);

@@ -2,7 +2,9 @@
    Un code de 2 mots et 3 chiffres (PINCE-DIODE-482) suffit pour revenir depuis n'importe quel appareil.
    La page ne garde qu'un jeton de session, un jour au plus (postes partagés).
    Les fonctions de la base sont dans supabase/0001-codes-eleves.sql ; en mode démo, elles sont imitées sur cet appareil.
-   Si la migration n'est pas appliquée (une copie du jeu), config.js garde COMPTES à false et rien de tout cela n'apparaît. */
+   Si la migration n'est pas appliquée (une copie du jeu), config.js garde COMPTES à false et rien de tout cela n'apparaît.
+   La progression de l'entraînement (les challenges réussis) part aussi en ligne avec le code élève, par cc_progression
+   (supabase/0002-progression.sql), seulement si config.js a PROGRESSION_EN_LIGNE: true (règle M7). */
 
 // La liste des mots, dans l'ordre de court_circuit.mots (rang 0 à 63) : thème « l'atelier ».
 const MOTS_CODES = ['MARTEAU', 'PINCE', 'SCIE', 'ENCLUME', 'PERCEUSE', 'BOULON', 'ECROU', 'RIVET',
@@ -42,6 +44,7 @@ const Comptes = (() => {
   // l'imitation seulement avec ?demo ou sans projet configuré : jamais par accident (un fichier qui ne se charge pas, par exemple)
   const demo = (() => { modeDemo(); try { return sessionStorage.getItem('cc-demo') === '1' || !cfg.SUPABASE_URL; } catch (e) { return params.has('demo') || !cfg.SUPABASE_URL; } })();
   const actif = demo || !!cfg.COMPTES;
+  const progressionEnLigne = demo || (!!cfg.COMPTES && !!cfg.PROGRESSION_EN_LIGNE);
   let session = stock.lire('compte'); // { jeton, pseudo } : un jour au plus
   async function rpc(fn, args) {
     if (demo) return Imitation[fn](args);
@@ -58,13 +61,21 @@ const Comptes = (() => {
   }
   const garder = r => { if (r.ok) { session = { jeton: r.jeton, pseudo: r.pseudo }; stock.ecrire('compte', session); } return r; };
   return {
-    actif, demo,
+    actif, demo, progressionEnLigne,
     get session() { return session; },
     creer: async pseudo => garder(await rpc('cc_solo', { p_pseudo: pseudo })),
     entrer: async texte => { const c = lireCodeEleve(texte); if (!c.ok) return c; return garder(await rpc('cc_connexion', { p_code: c.canon })); },
     reprise: async () => { if (!session) return { ok: false, message: 'Entre ton code.' }; const r = await rpc('cc_reprise', { p_jeton: session.jeton }); if (!r.ok) { session = null; stock.ecrire('compte', null); } return r; },
     enregistrer: async (nom, texte, id = null) => rpc('cc_enregistrer', { p_jeton: session && session.jeton, p_nom: nom, p_texte: texte, p_id: id }),
     supprimer: async id => rpc('cc_supprimer', { p_jeton: session && session.jeton, p_id: id }),
+    // les challenges réussis : la base les réunit à ceux qu'elle a déjà, et renvoie la liste complète
+    progression: async reussis => {
+      if (!progressionEnLigne) return { ok: false, message: 'La progression n’est pas gardée en ligne.' };
+      if (!session) return { ok: false, message: 'Entre ton code.' };
+      const r = await rpc('cc_progression', { p_jeton: session.jeton, p_reussis: reussis });
+      if (!r.ok && /session/i.test(r.message || '')) { session = null; stock.ecrire('compte', null); }
+      return r;
+    },
     effacer: async () => { const r = await rpc('cc_effacer_moi', { p_jeton: session && session.jeton }); session = null; stock.ecrire('compte', null); return r; },
     oublier() { session = null; stock.ecrire('compte', null); },
   };
@@ -86,6 +97,7 @@ const Imitation = (() => {
   const uuid = () => crypto.randomUUID ? crypto.randomUUID() : nouvelId() + nouvelId();
   const parJeton = (b, j) => b.eleves.find(e => e.jeton === j);
   const expire = { ok: false, message: 'Ta session a expiré : entre de nouveau ton code.' };
+  const CONNUS = ['ligne', 'escalier', 'mur', 'montee', 'tondeuse', 'slalom', 'serpent', 'stalactites', 'creneaux', 'grotte'];
   return {
     cc_solo({ p_pseudo }) {
       const ps = String(p_pseudo || '').replace(/\s+/g, ' ').trim(); if (ps.length < 2 || ps.length > 24) return { ok: false, message: 'Écris un prénom ou un pseudo de 2 à 24 caractères (jamais ton nom de famille).' };
@@ -94,8 +106,13 @@ const Imitation = (() => {
       const e = { id: uuid(), pseudo: ps, ...c, jeton: uuid(), programmes: [] }; b.eleves.push(e); ecrire(b);
       return { ok: true, pseudo: e.pseudo, code_affiche: e.code_affiche, jeton: e.jeton };
     },
-    cc_connexion({ p_code }) { const e = lire().eleves.find(x => x.code === p_code); return e ? { ok: true, pseudo: e.pseudo, code_affiche: e.code_affiche, jeton: e.jeton } : { ok: false, message: 'Ce code n’existe pas. Vérifie-le dans ton cahier.' }; },
-    cc_reprise({ p_jeton }) { const e = parJeton(lire(), p_jeton); if (!e) return expire; return { ok: true, pseudo: e.pseudo, code_affiche: e.code_affiche, programmes: e.programmes.slice().sort((a, b) => b.modifie_le.localeCompare(a.modifie_le)) }; },
+    cc_connexion({ p_code }) { const e = lire().eleves.find(x => x.code === p_code); return e ? { ok: true, pseudo: e.pseudo, code_affiche: e.code_affiche, jeton: e.jeton, reussis: e.reussis || [] } : { ok: false, message: 'Ce code n’existe pas. Vérifie-le dans ton cahier.' }; },
+    cc_reprise({ p_jeton }) { const e = parJeton(lire(), p_jeton); if (!e) return expire; return { ok: true, pseudo: e.pseudo, code_affiche: e.code_affiche, programmes: e.programmes.slice().sort((a, b) => b.modifie_le.localeCompare(a.modifie_le)), reussis: e.reussis || [] }; },
+    cc_progression({ p_jeton, p_reussis }) {
+      if (!Array.isArray(p_reussis) || p_reussis.length > 10 || p_reussis.some(x => !CONNUS.includes(x))) return { ok: false, message: 'Cette progression n’est pas valable : elle n’a pas été gardée en ligne.' };
+      const b = lire(), e = parJeton(b, p_jeton); if (!e) return expire;
+      e.reussis = CONNUS.filter(x => (e.reussis || []).includes(x) || p_reussis.includes(x)); ecrire(b); return { ok: true, reussis: e.reussis };
+    },
     cc_enregistrer({ p_jeton, p_nom, p_texte, p_id }) {
       const nom = String(p_nom || '').replace(/\s+/g, ' ').trim(); if (nom.length < 1 || nom.length > 40) return { ok: false, message: 'Donne un nom de 1 à 40 caractères à ton programme.' };
       if (String(p_texte).length > 4000) return { ok: false, message: 'Un programme gardé a 4 000 caractères au plus.' };

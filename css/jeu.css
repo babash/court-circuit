@@ -93,6 +93,42 @@ input[type=text],select{min-height:44px;border-radius:10px;border:1px solid var(
 .code-gros{font-family:var(--code);font-size:clamp(24px,7vw,40px);font-weight:700;letter-spacing:2px;color:var(--jaune);text-align:center;margin:10px 0;word-break:break-all}
 .classement{width:100%;border-collapse:collapse;font-size:15px}.classement th,.classement td{padding:5px 8px;border-bottom:1px solid var(--trait);text-align:left}
 .classement th{font-family:var(--titre);color:var(--gris)}.classement td.n{text-align:right;font-variant-numeric:tabular-nums}
+/* l'entraînement : le fil des 10 challenges, la consigne, les trous, le curseur de vitesse */
+.jeu.entrainement .bandeau .k,.jeu.entrainement .bandeau .z,.jeu.entrainement .barre,.jeu.entrainement .chrono,.jeu.entrainement .noms{display:none}
+.suivi{flex:1;font-family:var(--corps);font-weight:400;font-size:14.5px;color:var(--texte)}
+.phase.bon{background:#073B2A;color:var(--vert)}.phase.mal{background:#3A1218;color:#FCA5A5}
+.legende{display:flex;flex-wrap:wrap;gap:4px 14px;margin:0;font-size:13.5px;color:var(--gris)}
+.legende .l-k{color:var(--k)}.legende .l-c,.legende .l-b{color:var(--jaune)}
+.fil{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px}
+.fil-groupe{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.fil-groupe ol{display:flex;gap:4px;list-style:none;margin:0;padding:0}
+.fil-titre{font-family:var(--titre);font-weight:700;font-size:13.5px;color:var(--gris)}
+.fil-compte{font-size:13.5px;color:var(--gris)}
+.fil-pas{min-width:38px;min-height:38px;padding:0 6px;border-radius:9px;border:1px solid var(--trait);background:var(--panel2);font-family:var(--titre);font-weight:700;font-size:15px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+.fil-pas:hover{border-color:var(--k)}
+.fil-pas.fait{background:#073B2A;border-color:var(--vert);color:var(--vert)}
+.fil-pas.ferme{color:var(--gris);background:var(--panel);border-style:dashed;cursor:default}
+.fil-pas[aria-current=step]{outline:2px solid var(--k);outline-offset:1px}
+.fil-pas[aria-current=step]:focus-visible{outline-color:var(--jaune)}
+.hf .fil-pas:not(.fait):not(.ferme){color:var(--violet)}
+.ch-tete{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:13.5px;color:var(--gris)}
+.ch-etat{color:var(--vert);font-weight:700}
+.ch-nom{margin:2px 0 0;font-family:var(--titre);font-weight:700;font-size:19px;color:var(--texte)}
+.ch-but,.ch-aide,.ch-version{margin:4px 0 0}
+.ch-aide{color:var(--gris)}
+.consigne code,.conseil code,.piste code{font-family:var(--code);font-size:13px;color:#67E8F9;background:var(--nuit);border-radius:4px;padding:0 4px}
+.trou-ex{font-family:var(--code);font-weight:700;color:#FDE047;background:#3B2F07;outline:1px dashed var(--jaune);border-radius:3px;padding:0 2px}
+.ch-contraintes{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column;gap:2px}
+.ch-contraintes .titre{color:var(--gris)}
+.ch-contraintes .ok{color:var(--vert)}.ch-contraintes .non{color:#FCA5A5}
+.ch-contraintes .sous{color:var(--gris)}
+.fenetre .ch-contraintes{margin:8px 0}
+.piste{margin-top:6px;padding:6px 10px;border-radius:8px;background:#1B1A0C;border:1px solid #4B4513;color:#FDE68A}
+.piste p{margin:2px 0}.piste .sous{color:#E5D9A3}
+.curseur{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:14.5px}
+.curseur label{font-family:var(--titre);font-weight:700}
+.curseur input[type=range]{flex:1;min-width:140px;max-width:260px;min-height:32px;accent-color:var(--k);background:transparent}
+.curseur output{color:var(--gris);font-size:14px}
 @media (max-width:860px){
   .jeu{grid-template-columns:1fr;padding:8px}
   .ed{height:260px}
