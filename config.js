@@ -11,7 +11,8 @@ window.CC_CONFIG = {
   SUPABASE_URL: 'https://cukahpyqkljiddmimpyi.supabase.co',
   COMPTES: true,
   // PROGRESSION_EN_LIGNE : avec un code élève, la liste des challenges réussis est gardée aussi en ligne
-  // (supabase/0002-progression.sql, fonction cc_progression). false tant que la migration 0002 n'est pas appliquée (règle M7).
-  PROGRESSION_EN_LIGNE: false,
+  // (supabase/0002-progression.sql, fonction cc_progression). true une fois la migration 0002 appliquée dans la base du site ;
+  // pour une copie, laisse false tant qu'elle n'est pas appliquée dans ton projet (règle M7).
+  PROGRESSION_EN_LIGNE: true,
   SUPABASE_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN1a2FocHlxa2xqaWRkbWltcHlpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI5NDQ0MDYsImV4cCI6MjEwODUyMDQwNn0.fYITbTbfeC4UmpPjmsDIdKAmH6d2Hpfkdhio2WILgNw',
 };
