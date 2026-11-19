@@ -10,9 +10,9 @@ Ce dossier contient les migrations de la base de Court-circuit. Le jeu lui-même
 
 ## Où en est la base
 
-**0002 (la progression) n'est pas encore appliquée.** L'enseignant a donné son accord sans relire le SQL (« Fais le sans ma validation je te fais confiance », 19/11/2026 à 11:57, heure de Mayotte) : l'Architecte relit `0002-progression.sql`, le chef d'orchestre l'applique par `apply_migration` sous le nom `court_circuit_0002_progression`, puis le Gardien vérifie la base (ci-dessous) avant de publier `PROGRESSION_EN_LIGNE: true`. D'ici là, la page n'appelle pas `cc_progression` (règle M7) et la progression reste sur l'appareil.
-
 **0001 est appliquée**, après l'accord de l'enseignant sur le SQL exact (« Ok base Court-circuit », 13/11/2026 à 06:45, heure de Mayotte ; règle M4) : `court_circuit_0001_codes_eleves`, le 13/11 à 06:48 (version 20261113034818), par le chef d'orchestre, sans les lignes `begin;` et `commit;`. Le texte enregistré a la même empreinte que ce fichier (md5 sans commentaires, espaces ni `;` : `f2a0459a…`) : **le fichier de ce dossier est exactement celui qui a été appliqué**. Vérifié aussitôt par les métadonnées seulement : 4 tables sous RLS, sans règle ni droit ; le schéma fermé à `anon` et à `authenticated` ; les 6 fonctions d'entrée `cc_…` appelables par `anon` seul, les 4 fonctions internes par personne ; 64 mots ; 0 compte. Ensuite seulement, `config.js` passe à `COMPTES: true` (règle M7 : la page n'appelle que des fonctions qui existent).
+
+**0002 (la progression) est appliquée**, avec l'accord de l'enseignant donné par avance (« Fais le sans ma validation je te fais confiance », 19/11/2026 à 11:57, heure de Mayotte) et après la relecture de l'Architecte (« bon à appliquer ») : `court_circuit_0002_progression`, le 19/11 à 12:43, heure de Mayotte (version 20261119094320), par le chef d'orchestre, sans les lignes `begin;` et `commit;`. Le texte appliqué est ce fichier sans ces deux lignes (md5 `e7a79a9bee159803dd24d2388332b285`, le même que celui du texte appliqué ; empreinte sans commentaires, espaces ni `;` : `b0d72ac3…`) : **le fichier de ce dossier est exactement celui qui a été appliqué**. Le Gardien vérifie la base par les métadonnées (ci-dessous) avant de publier la page avec `PROGRESSION_EN_LIGNE: true` (règle M7 : la page n'appelle que des fonctions qui existent).
 
 ## Les fichiers
 
@@ -67,14 +67,14 @@ Chaque fonction borne ses paramètres et répond `{ "ok": false, "message": … 
 
 « Effacer mes données » (`cc_effacer_moi`) et le ménage des comptes sans visite depuis 12 mois effacent la ligne de l'élève : la progression part avec elle, sans rien changer à ces fonctions.
 
-**Côté page**, tout est derrière le réglage `PROGRESSION_EN_LIGNE` de `config.js`, `false` tant que 0002 n'est pas appliquée (règle M7). Avec `true` et un code élève : à la connexion, à la reprise et à l'ouverture de l'entraînement, la page réunit la progression de l'appareil et celle de la base ; chaque challenge réussi part aussitôt ; sans réseau, elle le dit en français et garde la progression sur l'appareil ; si la session a expiré, elle l'oublie et demande d'entrer de nouveau son code. Sans code élève, rien ne change : la progression reste sur l'appareil.
+**Côté page**, tout est derrière le réglage `PROGRESSION_EN_LIGNE` de `config.js` : `true` depuis l'application de 0002 dans la base du site ; pour une copie, `false` tant que 0002 n'est pas appliquée dans son projet (règle M7). Avec `true` et un code élève : à la connexion, à la reprise et à l'ouverture de l'entraînement, la page réunit la progression de l'appareil et celle de la base ; chaque challenge réussi part aussitôt ; sans réseau, elle le dit en français et garde la progression sur l'appareil ; si la session a expiré, elle l'oublie et demande d'entrer de nouveau son code. Sans code élève, rien ne change : la progression reste sur l'appareil.
 
 ## Appliquer
 
-1. L'enseignant lit `0001-codes-eleves.sql` et donne son accord. Pour `0002-progression.sql`, il a donné son accord par avance (19/11, 11:57) ; l'Architecte relit le SQL.
+1. L'enseignant lit `0001-codes-eleves.sql` et donne son accord. Pour `0002-progression.sql`, il a donné son accord par avance (19/11, 11:57), et l'Architecte a relu le SQL (« bon à appliquer »).
 2. Le chef d'orchestre l'applique par `apply_migration`, sous le nom `court_circuit_0001_codes_eleves` (puis `court_circuit_0002_progression`), sans les lignes `begin;` et `commit;`.
 3. Le Gardien vérifie par les métadonnées (ci-dessous) et l'inscrit au journal.
-4. Ensuite seulement, `COMPTES: true` (puis `PROGRESSION_EN_LIGNE: true`) dans `config.js`, dans une branche publiée par le Gardien. Pour 0002, c'est le dernier commit de la branche de T93 : si l'application était retardée, le Gardien n'aurait qu'à le retirer.
+4. Ensuite seulement, `COMPTES: true` (puis `PROGRESSION_EN_LIGNE: true`) dans `config.js`, dans une branche publiée par le Gardien. Pour 0002, c'est le commit « progression en ligne en service » de la branche de T93, publié après la vérification de la base par le Gardien.
 
 ## Vérifier, sans lire aucune donnée
 
@@ -120,7 +120,7 @@ La migration a été essayée sur un PostgreSQL 16 local (rôles `anon`, `authen
 Sur la même reproduction (PostgreSQL 16, rôles de l'API, socle commun du site, puis 0001), avec des comptes inventés, jamais sur la base en ligne, 53 contrôles réussis :
 - 0002 appliquée sur une base qui a déjà des comptes et un programme, puis relancée sans erreur ; les autres colonnes des comptes ne changent pas ; la progression part vide ;
 - les droits : 7 fonctions `cc_` appelables par `anon` seul, aucune par `authenticated` ni par `public` ; `cc_progression` en `security definer` avec un `search_path` vide ; le schéma, les 4 tables (RLS, aucune règle) et la colonne restent fermés à `anon` et à `authenticated` ; en `anon`, la lecture de la table, l'écriture de la colonne et les fonctions internes sont refusées ;
-- en `anon` : la progression gardée et rangée dans l'ordre des challenges, réunie sans jamais être réduite, la liste vide, les doublons ; 7 valeurs fausses refusées (identifiant inconnu, valeur vide, liste vide de PostgreSQL, tableau à deux dimensions, 11 valeurs, majuscules, espace) sans rien changer ; un jeton inconnu : « Ta session a expiré » ; écrites à la main en `postgres`, une valeur inconnue, 11 valeurs ou `null` sont refusées par la table ;
+- en `anon` : la progression gardée et rangée dans l'ordre des challenges, réunie sans jamais être réduite, la liste vide, les doublons ; 7 valeurs fausses refusées (identifiant inconnu, valeur vide, liste absente (`null`), tableau à deux dimensions, 11 valeurs, majuscules, espace) sans rien changer ; un jeton inconnu : « Ta session a expiré » ; écrites à la main en `postgres`, une valeur inconnue, 11 valeurs ou `null` sont refusées par la table ;
 - `cc_connexion` et `cc_reprise` renvoient `reussis` en plus de leurs champs ;
 - « Effacer mes données » et le ménage d'un compte vu il y a 13 mois effacent aussi la progression ;
 - l'inverse de 0001 refuse de partir tant que 0002 est appliquée ; **l'inverse de 0002 remet exactement le schéma d'avant** (`pg_dump` du schéma `court_circuit` et de `public` identiques), garde les programmes, et se relance sans effet ; 0002 se réapplique ensuite ;
