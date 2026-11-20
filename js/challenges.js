@@ -1,6 +1,7 @@
 /* Court-circuit : l'entraînement en 10 challenges, sans limite de temps.
    5 challenges de base, ouverts l'un après l'autre, puis 5 hauts-faits, ouverts quand les 5 de base sont réussis.
-   Les premiers donnent une carte seule ; les suivants, un code à trous (___) à compléter.
+   Les challenges 1 et 2 donnent une carte seule, 3 à 5 un code à trous (___) à compléter ;
+   les hauts-faits alternent : 1, 3 et 5 une carte seule, 2 et 4 un code à trous (champ « trous »).
    Le robot joue seul sur la carte, avec le moteur des matchs (createMatch) à vitesse fixe : une action toutes les
    3 ticks, que le code ait des lignes recopiées ou non. Le curseur de vitesse ne change que l'affichage, jamais le résultat.
    Les cartes : '#' un mur, 'K' le départ, '*' une case à colorier, 'B' une case à atteindre, '.' une case libre. */

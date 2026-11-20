@@ -45,8 +45,6 @@ input[type=text],select{min-height:44px;border-radius:10px;border:1px solid var(
 .c-kw{color:var(--violet);font-weight:700}.c-str{color:#FDBA74}.c-num{color:#FDE047}.c-fn{color:#67E8F9}.c-op{color:#FF8AC4}.c-com{color:#A9B5C8;font-style:italic}
 .consigne{background:var(--panel);border:1px solid var(--trait);border-radius:10px;padding:8px 12px;font-size:14.5px}
 .consigne b{color:var(--jaune)}
-.etoiles{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:4px;font-size:14px}
-.etoiles .ok{color:var(--vert)}
 .ed{height:340px;border:1px solid var(--trait);border-radius:10px;overflow:hidden;background:#0B1222}
 .erreur{background:#2A1015;border:1px solid #6B2430;border-radius:10px;padding:8px 10px}
 .erreur code{display:block;font-family:var(--code);font-size:13.5px;color:#FCA5A5;white-space:pre-wrap}

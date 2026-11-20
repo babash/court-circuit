@@ -48,7 +48,7 @@ function dessiner() {
   if (!S.carte) return;
   if (S.mode === 'solo' && S.infoCarte) return dessinerChallenge();
   const p = S.partie, opt = { murs: S.murs, retourne: S.moi === 'Z' };
-  if (p) { const f = p.m.frames, t = Math.min(f.length - 1, p.m.t) + (S.etat === 'duel' || S.etat === 'solo' ? Math.min(.99, (performance.now() - S.t0) / 100 - p.m.t) : 0); PL.dessiner(f, Math.max(0, t), opt); }
+  if (p) { const f = p.m.frames, t = Math.min(f.length - 1, p.m.t) + (S.etat === 'duel' ? Math.min(.99, (performance.now() - S.t0) / 100 - p.m.t) : 0); PL.dessiner(f, Math.max(0, t), opt); }
   else { const m = createMatch({ map: S.carte, code: { K: '', Z: '' }, solo: S.mode === 'solo' }); PL.dessiner(m.frames, 0, { ...opt, path: S.apercu }); }
 }
 function poserCarte(rows, nom = '', idee = '') {
@@ -57,7 +57,7 @@ function poserCarte(rows, nom = '', idee = '') {
 }
 
 /* ---------- l'entraînement : 10 challenges sans limite de temps ---------- */
-// La progression, sur l'appareil (le même stock qu'avant ; l'ancienne clé « etoiles » n'est plus lue) :
+// La progression, sur l'appareil, gardée 30 jours après sa dernière écriture (stock.jours, dans reseau.js ; l'ancienne clé « etoiles » n'est plus lue) :
 // { reussis: [identifiants], codes: { identifiant: le dernier code de l'élève pour ce challenge } }
 function progression() {
   const p = stock.lire('challenges') || {}, connus = new Set(CHALLENGES.map(c => c.id));
@@ -94,7 +94,7 @@ function majConsigne() {
     <p class="ch-aide">${c.trous ? 'Code à trous : remplace chaque <span class="trou-ex">___</span> par ce qui manque, puis lance. Sans limite de temps : ton robot s’arrête dès que l’objectif est atteint.' : 'À toi d’écrire le code, puis lance. Sans limite de temps : ton robot s’arrête dès que l’objectif est atteint.'}</p>
     <ul class="ch-contraintes" id="contraintes"${c.haut ? '' : ' hidden'}></ul>
     ${n > 1 ? `<p class="ch-version">Carte : version ${S.iv + 1} sur ${n}. Les obstacles changent : ton code doit réussir sur les ${n} versions. <button class="bouton petit" type="button" data-a="version">Version suivante</button></p>` : ''}
-    ${e ? `<div class="piste"><p><b>Piste 1 :</b> ${codeTxt(c.pistes[0])}</p>${e > 1 ? `<p><b>Piste 2 :</b> ${codeTxt(c.pistes[1])}</p>` : '<p class="sous">Une autre piste viendra au prochain essai raté.</p>'}</div>` : ''}
+    ${e ? `<div class="piste"><p><b>Indice 1 :</b> ${codeTxt(c.pistes[0])}</p>${e > 1 ? `<p><b>Indice 2 :</b> ${codeTxt(c.pistes[1])}</p>` : '<p class="sous">Un autre indice viendra au prochain essai raté.</p>'}</div>` : ''}
     <div class="ligne" style="margin:6px 0 0"><button class="bouton petit" type="button" data-a="depart">${S.confirmeDepart ? 'Sûr·e ? Ton code sera remplacé' : 'Remettre le code de départ'}</button></div>`;
   majContraintes();
 }
@@ -170,7 +170,7 @@ function finChallenge(e) {
   S.etat = 'pret'; ED.ligneEnCours(0); const c = S.ch, f = e.fin;
   const rate = () => { S.echecs[c.id] = (S.echecs[c.id] || 0) + 1; majConsigne(); };
   if (f.raison === 'arret') { phase('Arrêté'); dire('Robot arrêté. Change ton code si tu veux, puis relance-le depuis le départ.', 'aide'); majBoutons(); return; }
-  if (!f.ok) { phase('Raté', 'mal'); rate(); if (f.raison === 'erreur') montrerErreur(f.err); dire(texteFin(e) + (S.echecs[c.id] <= 2 ? ' Une piste est apparue au-dessus de ton code.' : ''), 'mal'); majBoutons(); return; }
+  if (!f.ok) { phase('Raté', 'mal'); rate(); if (f.raison === 'erreur') montrerErreur(f.err); dire(texteFin(e) + (S.echecs[c.id] <= 2 ? ' Un indice est apparu au-dessus de ton code.' : ''), 'mal'); majBoutons(); return; }
   if (e.change) { phase('Presque'); dire('Objectif atteint, mais ton code a changé en route : relance-le depuis le départ pour valider le challenge.', 'aide'); majBoutons(); return; }
   const non = contraintesNonTenues(c, e.code);
   if (non.length) { phase('Presque'); rate(); dire('Objectif atteint, mais il manque une condition du haut-fait : ' + non.map(x => `${x.texte.charAt(0).toLowerCase() + x.texte.slice(1)} (${x.detail})`).join(' ; ') + '.', 'mal'); majBoutons(); return; }
@@ -236,7 +236,8 @@ function verifier(code) {
 function texteErreur(e) { return `${e.type || 'Error'}: ${e.msg || e.message}`; }
 function majCode() {
   const code = ED.code(), solo = S.mode === 'solo' && S.ch;
-  if (solo) { const p = progression(); p.codes[S.ch.id] = code; ecrireProgression(p); } else stock.ecrire('code', code);
+  // hors de l'entraînement, le code n'est écrit que s'il a changé : ouvrir la page ne relance pas son jour de garde
+  if (solo) { const p = progression(); p.codes[S.ch.id] = code; ecrireProgression(p); } else { const g = stock.lire('code'); if (code !== (g === null ? CODE_DEPART : g)) stock.ecrire('code', code); }
   // à l'entraînement, un code à trous n'est pas exécuté pour vérifier : ses ___ ne sont pas des erreurs de Python
   const v = solo && trousDe(code).length ? (() => { try { parse(code); return { ok: true }; } catch (e) { return { ok: false, err: e }; } })() : verifier(code); S.valide = v.ok;
   if (!v.ok) {
@@ -273,10 +274,10 @@ function majBoutons() {
     else { go.textContent = S.essai ? 'Relancer depuis le départ' : 'Lancer'; go.disabled = !S.valide || !ED.code().trim(); }
     $('bCodes').hidden = !Comptes.actif; return;
   }
-  if (S.etat === 'pret') { go.textContent = S.mode === 'solo' ? 'Lancer (30 s)' : 'Lancer le match'; go.disabled = !S.valide || !ED.code().trim(); }
+  if (S.etat === 'pret') { go.textContent = 'Lancer le match'; go.disabled = !S.valide || !ED.code().trim(); }
   else if (S.etat === 'ecriture') { go.textContent = 'Je suis prêt·e'; go.disabled = !S.valide; }
   else if (S.etat === 'attente') { go.textContent = 'En attente de l’adversaire…'; go.disabled = true; }
-  else if (S.etat === 'duel' || S.etat === 'solo') { const change = ED.code() !== S.partie.codeActuel(S.moi); go.textContent = change ? 'Envoyer le code (Ctrl + Entrée)' : 'Code envoyé'; go.disabled = !change || !S.valide; }
+  else if (S.etat === 'duel') { const change = ED.code() !== S.partie.codeActuel(S.moi); go.textContent = change ? 'Envoyer le code (Ctrl + Entrée)' : 'Code envoyé'; go.disabled = !change || !S.valide; }
   else if (S.etat === 'salle') { go.textContent = 'En attente de la manche…'; go.disabled = true; }
   else { go.textContent = 'Match terminé'; go.disabled = true; }
   $('bCodes').hidden = !Comptes.actif;
@@ -285,7 +286,7 @@ function action() {
   if (S.etat === 'pret') return S.mode === 'solo' ? lancerChallenge() : S.mode === 'zero' ? ecriture(60, () => lancerZero()) : null;
   if (S.etat === 'challenge') return envoyerChallenge();
   if (S.etat === 'ecriture') return S.finEcriture && S.finEcriture();
-  if (S.etat === 'duel' || S.etat === 'solo') return envoyer();
+  if (S.etat === 'duel') return envoyer();
 }
 
 /* ---------- les modes ---------- */
@@ -329,7 +330,7 @@ function lancerZero() {
 }
 function demarrer(etat) {
   S.etat = etat; S.t0 = performance.now(); S.vu = 0; S.dernierValide = ED.code(); conseil.vus = {}; S.propres = 0;
-  phase(etat === 'solo' ? 'En cours' : 'Duel', 'duel'); dire('C’est parti ! Tu peux changer ton code et l’envoyer : il repart de la ligne 1.', 'bon', 2500);
+  phase('Duel', 'duel'); dire('C’est parti ! Tu peux changer ton code et l’envoyer : il repart de la ligne 1.', 'bon', 2500);
   majBoutons(); requestAnimationFrame(boucle);
 }
 function envoyer() {
@@ -340,7 +341,7 @@ function envoyer() {
   if (S.salle) diffuserJournal(); majBoutons();
 }
 function boucle() {
-  if (S.etat !== 'duel' && S.etat !== 'solo') return;
+  if (S.etat !== 'duel') return;
   const p = S.partie, cible = Math.floor((performance.now() - S.t0) / 100);
   p.avancer(cible);
   const f = p.m.frames;
@@ -655,7 +656,7 @@ function memo() {
   ouvrir(`<div class="memo"><h2>Mémo</h2>
     <h3>Les actions</h3>${dl(MOTS.actions)}<h3>Les capteurs</h3>${dl(MOTS.capteurs)}<h3>Les mots de Python</h3>${dl(MOTS.mots_cles)}
     <h3>Exemples</h3><pre>${colorer('for i in range(4):\n    nord()\nest()')}</pre><pre>${colorer('while True:\n    while not obstacleNord():\n        nord()\n    est()\n    while not obstacleSud():\n        sud()\n    est()')}</pre>
-    <h3>L’entraînement</h3><p>10 challenges sans limite de temps : 5 de base, ouverts l’un après l’autre, puis 5 hauts-faits, plus difficiles, ouverts quand les 5 de base sont réussis. Les premiers donnent une carte seule ; les suivants, un code à trous : remplace chaque ___ (en jaune) par ce qui manque. Ton robot s’arrête dès que l’objectif est atteint, ou quand ton programme est fini ; une boucle sans fin est arrêtée. Après un essai raté, une piste apparaît. Le curseur règle la vitesse du robot, sans changer le résultat. Ta progression est gardée sur cet appareil${Comptes.progressionEnLigne ? ', et en ligne si tu as un code élève' : ''}.</p>
+    <h3>L’entraînement</h3><p>10 challenges sans limite de temps : 5 de base, ouverts l’un après l’autre, puis 5 hauts-faits, plus difficiles, ouverts quand les 5 de base sont réussis. Les challenges 1 et 2 donnent une carte seule, les challenges 3 à 5 un code à trous ; les hauts-faits alternent (1, 3 et 5 : une carte seule ; 2 et 4 : un code à trous). Dans un code à trous, remplace chaque ___ (en jaune) par ce qui manque. Ton robot s’arrête dès que l’objectif est atteint, ou quand ton programme est fini ; une boucle sans fin est arrêtée. Après un essai raté, un indice apparaît. Le curseur règle la vitesse du robot, sans changer le résultat. Ta progression (les challenges réussis et ton dernier code de chacun) est gardée sur cet appareil 30 jours après ton dernier entraînement${Comptes.progressionEnLigne ? ', et en ligne si tu as un code élève' : ''} ; ton pseudo et ton code en cours, un jour. Après ce délai, elle est effacée de l’appareil la prochaine fois que Court-circuit s’ouvre sur ce poste.</p>
     <h3>Les règles des matchs</h3><p>30 s de match. Le robot qui a le plus de cases gagne. Une case de l’adversaire sur laquelle tu passes devient la tienne. Le nord est toujours en haut de ton écran. Chaque ligne recopiée ralentit ton robot : une boucle évite de recopier.</p>
     <h3>Au clavier</h3><p>Tab décale la ligne vers la droite, Maj + Tab vers la gauche. Échap puis Tab sort de l’éditeur. Ctrl + Entrée lance ou envoie le code. Le curseur de vitesse se règle avec les flèches.</p>
     <div class="ligne"><a class="bouton" href="memo.html" target="_blank" rel="noopener">Mémo à imprimer</a><button class="bouton fort" data-a="ok">Fermer</button></div></div>`, () => fermer());

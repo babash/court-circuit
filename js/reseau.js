@@ -1,13 +1,39 @@
 /* Court-circuit : stockage sur l'appareil et salles en direct.
-   Rien n'est enregistré en ligne : une salle est un canal temps réel de Supabase (diffusion et présence).
+   Une salle est un canal temps réel de Supabase (diffusion et présence), sans table : les duels ne sont pas enregistrés.
+   Seul le code élève, facultatif (js/comptes.js), garde en ligne le pseudo, les programmes et la progression.
    Mode démo (?demo, ou sans configuration) : la salle passe entre les onglets de ce navigateur. */
 
-// Stockage de l'appareil : un jour au plus (postes partagés), comme Lagon Arena et Gombessa.
+// Stockage de l'appareil (postes partagés) : un jour après la dernière écriture, comme Lagon Arena et Gombessa.
+// Une seule exception, décidée par l'enseignant le 19/11 : la progression des challenges (la clé « challenges » :
+// les challenges réussis et le dernier code de chacun) reste 30 jours après sa dernière écriture.
+// Une entrée périmée n'est plus lue, et elle est effacée du navigateur : par lire() quand il la rencontre, et par
+// menage(), au chargement de chaque page de Court-circuit. Tant que personne ne rouvre le jeu sur ce poste, elle y reste.
 const stock = {
-  lire(k, defaut = null) { try { const v = JSON.parse(localStorage.getItem('court-circuit:' + k)); if (!v || v.fin < Date.now()) return defaut; return v.val; } catch (e) { return defaut; } },
-  ecrire(k, val) { try { localStorage.setItem('court-circuit:' + k, JSON.stringify({ val, fin: Date.now() + 864e5 })); } catch (e) {} },
+  jours: { challenges: 30 }, // la durée de garde, en jours ; toutes les autres clés : 1 jour
+  lire(k, defaut = null) {
+    try {
+      const v = JSON.parse(localStorage.getItem('court-circuit:' + k));
+      if (!v || typeof v.fin !== 'number' || v.fin < Date.now()) { localStorage.removeItem('court-circuit:' + k); return defaut; }
+      return v.val;
+    } catch (e) { try { localStorage.removeItem('court-circuit:' + k); } catch (e2) {} return defaut; }
+  },
+  ecrire(k, val) { try { localStorage.setItem('court-circuit:' + k, JSON.stringify({ val, fin: Date.now() + (stock.jours[k] || 1) * 864e5 })); } catch (e) {} },
   oublier() { try { Object.keys(localStorage).filter(k => k.startsWith('court-circuit:')).forEach(k => localStorage.removeItem(k)); } catch (e) {} },
+  // le ménage : toute entrée « court-circuit: » périmée, illisible ou sans date de fin est effacée
+  menage() {
+    try {
+      const t = Date.now();
+      Object.keys(localStorage).filter(k => k.startsWith('court-circuit:')).forEach(k => {
+        let v = null; try { v = JSON.parse(localStorage.getItem(k)); } catch (e) {}
+        if (!v || typeof v.fin !== 'number' || v.fin < t) localStorage.removeItem(k);
+      });
+      // la base imitée du mode démo (js/comptes.js) : un jour après sa création
+      const d = JSON.parse(localStorage.getItem('court-circuit-demo:base') || 'null');
+      if (d && !(t - (d.t || 0) < 864e5)) localStorage.removeItem('court-circuit-demo:base');
+    } catch (e) {}
+  },
 };
+stock.menage();
 
 const params = new URLSearchParams(location.search);
 function modeDemo() {

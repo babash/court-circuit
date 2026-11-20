@@ -1,6 +1,7 @@
 /* Court-circuit : le code de l'élève (règle 21) et ses programmes gardés en ligne (« Mes codes »).
    Un code de 2 mots et 3 chiffres (PINCE-DIODE-482) suffit pour revenir depuis n'importe quel appareil.
-   La page ne garde qu'un jeton de session, un jour au plus (postes partagés).
+   La page ne garde qu'un jeton de session, un jour après sa dernière écriture (postes partagés) ; il est effacé ensuite,
+   au premier chargement de Court-circuit (stock.menage, dans js/reseau.js).
    Les fonctions de la base sont dans supabase/0001-codes-eleves.sql ; en mode démo, elles sont imitées sur cet appareil.
    Si la migration n'est pas appliquée (une copie du jeu), config.js garde COMPTES à false et rien de tout cela n'apparaît.
    La progression de l'entraînement (les challenges réussis) part aussi en ligne avec le code élève, par cc_progression
@@ -83,7 +84,7 @@ const Comptes = (() => {
 
 /* Mode démo : les mêmes fonctions que la base, imitées sur cet appareil (rien ne part en ligne). */
 const Imitation = (() => {
-  // comme le reste de l'appareil, la base imitée est oubliée un jour après sa création
+  // comme le jeton de session, la base imitée est oubliée un jour après sa création
   const CLE = 'court-circuit-demo:base', JOUR = 24 * 3600 * 1000;
   const lire = () => {
     try {
