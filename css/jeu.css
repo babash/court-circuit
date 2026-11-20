@@ -102,6 +102,9 @@ input[type=text],select{min-height:44px;border-radius:10px;border:1px solid var(
 .fil-groupe ol{display:flex;gap:4px;list-style:none;margin:0;padding:0}
 .fil-titre{font-family:var(--titre);font-weight:700;font-size:13.5px;color:var(--gris)}
 .fil-compte{font-size:13.5px;color:var(--gris)}
+.fil-effacer{margin-left:auto;color:var(--gris)}
+.bouton.danger{border-color:var(--corail);color:var(--corail)}.bouton.danger:hover{background:#3A1418}
+.liste-effacer{margin:6px 0 12px;padding-left:20px}.liste-effacer li{margin:3px 0}
 .fil-pas{min-width:38px;min-height:38px;padding:0 6px;border-radius:9px;border:1px solid var(--trait);background:var(--panel2);font-family:var(--titre);font-weight:700;font-size:15px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
 .fil-pas:hover{border-color:var(--k)}
 .fil-pas.fait{background:#073B2A;border-color:var(--vert);color:var(--vert)}

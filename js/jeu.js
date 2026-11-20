@@ -84,7 +84,39 @@ function majFil() {
     return `<li><button type="button" class="fil-pas${r ? ' fait' : o ? '' : ' ferme'}" data-c="${c.i}"${ici ? ' aria-current="step"' : ''}${o ? '' : ' aria-disabled="true"'} title="${esc(nomChallenge(c) + ' : ' + c.nom + ' (' + etat + ')')}" aria-label="${esc(nomChallenge(c) + ' : ' + c.nom + ', ' + etat)}">${r ? '✓' : o ? c.rang : CADENAS}</button></li>`; };
   const n = progression().reussis.length;
   $('fil').innerHTML = `<div class="fil-groupe"><span class="fil-titre">Challenges</span><ol>${CHALLENGES.filter(c => !c.haut).map(pas).join('')}</ol></div>`
-    + `<div class="fil-groupe hf"><span class="fil-titre">Hauts-faits</span><ol>${CHALLENGES.filter(c => c.haut).map(pas).join('')}</ol></div><span class="fil-compte">${n} sur ${CHALLENGES.length} réussi${n > 1 ? 's' : ''}</span>`;
+    + `<div class="fil-groupe hf"><span class="fil-titre">Hauts-faits</span><ol>${CHALLENGES.filter(c => c.haut).map(pas).join('')}</ol></div><span class="fil-compte">${n} sur ${CHALLENGES.length} réussi${n > 1 ? 's' : ''}</span>`
+    + '<button type="button" class="bouton petit fil-effacer" data-a="effacerAppareil">Effacer ma progression sur cet appareil</button>';
+}
+/* « Effacer ma progression sur cet appareil » (T96, poste partagé) : après une confirmation dans la page (« Annuler » d'abord),
+   l'appareil oublie tout ce que Court-circuit y garde (les clés « court-circuit: » de stock, dans reseau.js) :
+   la progression des challenges et le dernier code de chacun, le pseudo, le code des matchs, la vitesse, le niveau de Zéro
+   et le jeton du code élève (la déconnexion de « Ce n'est pas moi », Comptes.oublier). Rien n'est effacé en ligne :
+   c'est « Effacer mes données », dans « Mes codes ». La base imitée du mode démo (court-circuit-demo:base) n'est pas touchée. */
+function effacerAppareil(retour) {
+  const n = progression().reussis.length, s = Comptes.session;
+  const enLigne = s ? `<p><b>Ce qui n’est pas effacé :</b> tes programmes gardés${Comptes.progressionEnLigne ? ' et ta progression en ligne' : ''} restent liés à ton code élève. Tu les retrouves en entrant ton code, ici ou ailleurs. Pour les effacer en ligne, ferme cette fenêtre, puis « Mes codes » et « Effacer mes données ».</p>`
+    : `<p><b>Ce qui n’est pas effacé :</b> rien n’est effacé en ligne.${Comptes.actif ? ` Si tu as un code élève, tes programmes${Comptes.progressionEnLigne ? ' et ta progression en ligne' : ''} restent liés à lui.` : ''}</p>`;
+  ouvrir(`<h2 id="titreEffacer">Effacer ta progression sur cet appareil ?</h2>
+    <p>Cet appareil va oublier tout ce que Court-circuit y garde :</p>
+    <ul class="liste-effacer">
+      <li>les challenges réussis (${n} sur ${CHALLENGES.length}) et ton dernier code de chaque challenge ;</li>
+      <li>ton prénom ou ton pseudo, ton code des matchs, la vitesse du robot et le niveau de Zéro ;</li>
+      ${s ? `<li>ton code élève : cet appareil se déconnecte de ton code (${esc(s.pseudo)}), comme avec « Ce n’est pas moi ».</li>` : ''}
+    </ul>
+    ${enLigne}
+    <p class="sous">Tu repars du challenge 1. On ne peut pas revenir en arrière.</p>
+    <div class="ligne"><button class="bouton fort" type="button" data-a="annuler">Annuler</button><button class="bouton danger" type="button" data-a="effacer">Effacer de cet appareil</button></div>`, a => {
+    if (a === 'annuler') { fermer(); return; }
+    if (a !== 'effacer') return;
+    const deconnecte = !!Comptes.session;
+    Comptes.oublier(); stock.oublier();
+    S.pseudo = ''; S.zLv = 0; S.echecs = {}; S.vitesse = 1; majVitesse();
+    fermer.retour = null; fermer(); majBoutons();
+    choisirChallenge(0); pret();
+    dire('Ta progression est effacée de cet appareil : tu repars du challenge 1.' + (deconnecte ? ` Cet appareil n’est plus connecté à ton code élève ; ${Comptes.progressionEnLigne ? 'ta progression en ligne et tes programmes restent liés' : 'tes programmes restent liés'} à ton code.` : ''), 'aide', 8000);
+    const b = $('fil').querySelector('[data-c="0"]'); if (b) b.focus();
+  });
+  $('fenetre').setAttribute('aria-labelledby', 'titreEffacer'); fermer.retour = retour;
 }
 function majConsigne() {
   const c = S.ch, n = c.cartes.length, e = S.echecs[c.id] || 0;
@@ -623,8 +655,8 @@ function noterCode(code, aGarder) { // le code est montré en gros ; « Je l'ai 
 }
 
 /* ---------- fenêtres ---------- */
-function ouvrir(html, onAction) { $('fenetre').innerHTML = html; $('voile').hidden = false; $('fenetre').onclick = e => { const b = e.target.closest('[data-a]'); if (b && onAction) onAction(b.dataset.a, b); }; const f = $('fenetre').querySelector('input,button'); if (f) f.focus(); }
-function fermer() { $('voile').hidden = true; }
+function ouvrir(html, onAction) { $('fenetre').removeAttribute('aria-labelledby'); $('fenetre').innerHTML = html; $('voile').hidden = false; $('fenetre').onclick = e => { const b = e.target.closest('[data-a]'); if (b && onAction) onAction(b.dataset.a, b); }; const f = $('fenetre').querySelector('input,button'); if (f) f.focus(); }
+function fermer() { $('voile').hidden = true; const r = fermer.retour; fermer.retour = null; if (r && document.contains(r)) r.focus(); }
 function accueil() {
   if (S.salle) { S.salle.fermer(); S.salle = null; }
   S.etat = 'accueil'; $('jeu').hidden = true; $('salleInfo').hidden = true;
@@ -656,7 +688,7 @@ function memo() {
   ouvrir(`<div class="memo"><h2>Mémo</h2>
     <h3>Les actions</h3>${dl(MOTS.actions)}<h3>Les capteurs</h3>${dl(MOTS.capteurs)}<h3>Les mots de Python</h3>${dl(MOTS.mots_cles)}
     <h3>Exemples</h3><pre>${colorer('for i in range(4):\n    nord()\nest()')}</pre><pre>${colorer('while True:\n    while not obstacleNord():\n        nord()\n    est()\n    while not obstacleSud():\n        sud()\n    est()')}</pre>
-    <h3>L’entraînement</h3><p>10 challenges sans limite de temps : 5 de base, ouverts l’un après l’autre, puis 5 hauts-faits, plus difficiles, ouverts quand les 5 de base sont réussis. Les challenges 1 et 2 donnent une carte seule, les challenges 3 à 5 un code à trous ; les hauts-faits alternent (1, 3 et 5 : une carte seule ; 2 et 4 : un code à trous). Dans un code à trous, remplace chaque ___ (en jaune) par ce qui manque. Ton robot s’arrête dès que l’objectif est atteint, ou quand ton programme est fini ; une boucle sans fin est arrêtée. Après un essai raté, un indice apparaît. Le curseur règle la vitesse du robot, sans changer le résultat. Ta progression (les challenges réussis et ton dernier code de chacun) est gardée sur cet appareil 30 jours après ton dernier entraînement${Comptes.progressionEnLigne ? ', et en ligne si tu as un code élève' : ''} ; ton pseudo et ton code en cours, un jour. Après ce délai, elle est effacée de l’appareil la prochaine fois que Court-circuit s’ouvre sur ce poste.</p>
+    <h3>L’entraînement</h3><p>10 challenges sans limite de temps : 5 de base, ouverts l’un après l’autre, puis 5 hauts-faits, plus difficiles, ouverts quand les 5 de base sont réussis. Les challenges 1 et 2 donnent une carte seule, les challenges 3 à 5 un code à trous ; les hauts-faits alternent (1, 3 et 5 : une carte seule ; 2 et 4 : un code à trous). Dans un code à trous, remplace chaque ___ (en jaune) par ce qui manque. Ton robot s’arrête dès que l’objectif est atteint, ou quand ton programme est fini ; une boucle sans fin est arrêtée. Après un essai raté, un indice apparaît. Le curseur règle la vitesse du robot, sans changer le résultat. Ta progression (les challenges réussis et ton dernier code de chacun) est gardée sur cet appareil 30 jours après ton dernier entraînement${Comptes.progressionEnLigne ? ', et en ligne si tu as un code élève' : ''} ; ton pseudo et ton code en cours, un jour. Après ce délai, elle est effacée de l’appareil la prochaine fois que Court-circuit s’ouvre sur ce poste. Sur un poste partagé, « Effacer ma progression sur cet appareil », sous la liste des challenges, l’efface tout de suite (et déconnecte l’appareil de ton code élève).</p>
     <h3>Les règles des matchs</h3><p>30 s de match. Le robot qui a le plus de cases gagne. Une case de l’adversaire sur laquelle tu passes devient la tienne. Le nord est toujours en haut de ton écran. Chaque ligne recopiée ralentit ton robot : une boucle évite de recopier.</p>
     <h3>Au clavier</h3><p>Tab décale la ligne vers la droite, Maj + Tab vers la gauche. Échap puis Tab sort de l’éditeur. Ctrl + Entrée lance ou envoie le code. Le curseur de vitesse se règle avec les flèches.</p>
     <div class="ligne"><a class="bouton" href="memo.html" target="_blank" rel="noopener">Mémo à imprimer</a><button class="bouton fort" data-a="ok">Fermer</button></div></div>`, () => fermer());
@@ -693,6 +725,7 @@ function init() {
   $('mots').onclick = e => { const b = e.target.closest('.mot'); if (!b) return; const [t, bloc] = OUTILS[ongletOutil][+b.dataset.i]; ED.inserer(t, { bloc: !!bloc }); };
   // l'entraînement : le fil des 10 challenges, la consigne, le curseur de vitesse, Arrêter et Recommencer
   $('fil').onclick = e => {
+    if (e.target.closest('[data-a="effacerAppareil"]')) return effacerAppareil(e.target.closest('[data-a]'));
     const b = e.target.closest('[data-c]'); if (!b) return; const c = CHALLENGES[+b.dataset.c];
     if (!ouvert(c)) { dire(c.haut ? 'Les hauts-faits s’ouvrent quand les 5 challenges de base sont réussis.' : `${nomChallenge(c)} s’ouvre quand tu as réussi le challenge ${c.rang - 1}.`, 'aide', 4000); return; }
     if (c.i === S.chI && S.etat !== 'challenge') return;
